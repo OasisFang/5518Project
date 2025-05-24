@@ -7,16 +7,190 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
     <style>
-        body { padding: 20px; background-color: #f0f2f5; font-size: 0.95rem; }
-        .card { margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.09); border-radius: 8px; }
-        .card-header { background-color: #007bff; color: white; font-weight: bold; border-top-left-radius: 8px; border-top-right-radius: 8px; padding: 0.75rem 1rem;}
-        .card-body { padding: 1rem; }
-        .status-disconnected { color: #dc3545; font-weight: bold; }
-        .status-connected { color: #198754; font-weight: bold; }
-        .mode-indicator { font-size: 0.9em; padding: 5px 10px; border-radius: 5px; display: inline-block; margin-left: 15px;}
-        .mode-simulation { background-color: #ffc107; color: black; }
-        .mode-real { background-color: #20c997; color: white; }
-        .log-box { max-height: 150px; overflow-y: auto; border: 1px solid #dee2e6; padding: 10px; font-family: monospace; font-size: 0.85em; background-color: #fff; border-radius: 4px; margin-top: 10px;}
+        body { 
+            padding: 20px; 
+            background-color: #f8f9fa; 
+            font-size: 0.95rem;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        .card { 
+            margin-bottom: 20px; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            border-radius: 12px; 
+            border: none;
+            transition: transform 0.2s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .card-header { 
+            background-color: #0d6efd; 
+            color: white; 
+            font-weight: 600; 
+            border-top-left-radius: 12px; 
+            border-top-right-radius: 12px; 
+            padding: 1rem;
+            border-bottom: none;
+        }
+        .card-body { 
+            padding: 1.25rem; 
+            background-color: #fff;
+        }
+        .status-disconnected { 
+            color: #dc3545; 
+            font-weight: 600;
+            animation: pulse 2s infinite;
+        }
+        .status-connected { 
+            color: #198754; 
+            font-weight: 600;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .mode-indicator { 
+            font-size: 0.9em; 
+            padding: 8px 16px; 
+            border-radius: 20px; 
+            display: inline-block; 
+            margin-left: 15px;
+            font-weight: 500;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .mode-simulation { 
+            background-color: #ffc107; 
+            color: #000; 
+        }
+        .mode-real { 
+            background-color: #20c997; 
+            color: white; 
+        }
+        .log-box { 
+            max-height: 200px; 
+            overflow-y: auto; 
+            border: 1px solid #e9ecef; 
+            padding: 15px; 
+            font-family: 'Consolas', monospace; 
+            font-size: 0.85em; 
+            background-color: #f8f9fa; 
+            border-radius: 8px; 
+            margin-top: 15px;
+        }
+        .btn {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-primary {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #0b5ed7;
+        }
+        .form-control {
+            border-radius: 8px;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            transition: border-color 0.2s ease-in-out;
+        }
+        .form-control:focus {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+        }
+        .alert {
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .alert-info {
+            background-color: #e7f5ff;
+            color: #0c5460;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s ease-in-out;
+        }
+        .step-circle.active {
+            transform: scale(1.1);
+            box-shadow: 0 0 0 4px rgba(13,110,253,0.2);
+        }
+        .real-time-weight {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #0d6efd;
+            padding: 10px;
+            background-color: #e7f5ff;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .weight-stable {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .table {
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .table td {
+            vertical-align: middle;
+        }
+        .table-active-pc-med td:first-child {
+            font-weight: 600;
+            background-color: #e7f5ff !important;
+        }
+        .nav-pills .nav-link {
+            border-radius: 20px;
+            padding: 8px 16px;
+            margin: 0 4px;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+            box-shadow: 0 2px 4px rgba(13,110,253,0.2);
+        }
+        .nav-pills .nav-link:hover:not(.active) {
+            background-color: #e9ecef;
+        }
         .section { display: none; } 
         .table th, .table td { vertical-align: middle; font-size: 0.9rem; }
         .table-active-pc-med td:first-child { font-weight: bold; background-color: #cfe2ff !important; }
@@ -169,22 +343,29 @@
                                     <button class="btn btn-outline-secondary btn-sm mb-2" onclick="tareArduinoForMeasurement()">准备测量: 为单片药去皮 (Arduino清零)</button>
                                     <p class="small-text mb-1">(物理操作) 将 '<span class="current-active-med-name-wpp text-primary"></span>' 的 <strong class="text-danger">一粒药片</strong> 放入药盒并等待重量稳定。</p>
                                     
+                                    <!-- 在真实模式下显示实时重量 -->
+                                    <div id="realTimeWeightContainerInStep3" class="real-time-weight mt-3" style="display:none;">
+                                        <strong>实时重量:</strong> <span id="realTimeWeightValueInStep3">0.00</span>g
+                                        <div class="small-text text-muted">(来自Arduino传感器实时数据)</div>
+                                        <button class="btn btn-sm btn-outline-warning mt-2" onclick="tareArduinoForMeasurement()">传感器去皮/归零</button>
+                                    </div>
+                                    
                                     <!-- 添加模拟模式下的手动输入 -->
                                     <div id="simulatedWPPInputContainer" style="display:none;" class="mt-3">
                                         <div class="row g-2 align-items-end">
                                             <div class="col">
-                                                <label for="simulatedSinglePillWeightInput" class="form-label form-label-sm">模拟测量: 输入这 <strong class="text-danger">一粒药</strong> 的重量 (g):</label>
-                                                <input type="number" step="0.001" id="simulatedSinglePillWeightInput" class="form-control form-control-sm">
+                                                <label for="simulatedRealModeWeightInput" class="form-label form-label-sm">模拟测量: 输入这 <strong class="text-danger">一粒药</strong> 的重量 (g):</label>
+                                                <input type="number" step="0.001" id="simulatedRealModeWeightInput" class="form-control form-control-sm">
                                             </div>
                                             <div class="col-auto">
-                                                <button class="btn btn-success btn-sm" onclick="setWPPFromSimulatedSinglePillWeight()">确认并更新WPP</button>
+                                                <button class="btn btn-success btn-sm" onclick="setWPPFromRealModeSimulatedWeight()">确认并更新WPP</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between mt-3">
                                     <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(2, 'real')">返回</button>
-                                    <button class="btn btn-sm btn-primary" onclick="moveToWppStep(4, 'real')">下一步: 执行测量</button>
+                                    <button class="btn btn-sm btn-primary" onclick="moveToStep4WithCurrentWeight()">下一步: 确认测量</button>
                                 </div>
                             </div>
                             
@@ -249,7 +430,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p class="small-text mt-2" id="weighingRealModeInfoForInventory" style="display:none;">真实模式下，药盒总重和数量通常由实际传感器读数决定。WPP已设置完成。</p>
+                                <p class="small-text mt-2" id="weighingRealModeInfoForInventory" style="display:none;">真实模式下，药盒总重和数量由实际传感器读数决定，WPP已设置完成。<br>实时重量将自动更新，请确认药物数量已正确计算后点击下方按钮完成设置。</p>
                                 
                                 <div class="d-flex justify-content-between mt-3">
                                     <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(4)">返回</button>
@@ -474,22 +655,59 @@
     }
 
     function fetchStatus() {
-        return fetch('/get_status')
+        // 如果存在上一个获取状态的Promise且仍在进行中，则返回它
+        if (window.fetchStatusPromise && window.fetchStatusPromiseTimestamp && 
+            (new Date().getTime() - window.fetchStatusPromiseTimestamp) < 500) {
+            console.log("使用现有状态请求，避免重复请求");
+            return window.fetchStatusPromise;
+        }
+
+        // 记录请求时间戳
+        window.fetchStatusPromiseTimestamp = new Date().getTime();
+        
+        // 创建新的获取状态请求
+        window.fetchStatusPromise = fetch('/get_status')
             .then(response => response.json())
             .then(data => {
+                // 清除错误计数器，因为请求成功
+                window.fetchStatusErrorCount = 0;
+                
                 updateUI(data);
                 return data; // 返回数据以便链式处理
             })
             .catch(error => {
                 console.error('Error fetching status:', error);
-                addLog('获取状态失败: ' + error, 'error');
+                
+                // 递增错误计数
+                window.fetchStatusErrorCount = (window.fetchStatusErrorCount || 0) + 1;
+                
+                // 如果连续错误超过5次，显示更明显的错误
+                if (window.fetchStatusErrorCount > 5) {
                 const connStatusEl = document.getElementById('connectionStatus');
                 if(connStatusEl) {
-                    connStatusEl.textContent = '错误';
+                        connStatusEl.textContent = '连接丢失';
                     connStatusEl.className = 'status-disconnected';
                 }
+                    
+                    // 只在第5次和第10次错误时记录，避免日志过多
+                    if (window.fetchStatusErrorCount % 5 === 0 && window.fetchStatusErrorCount <= 10) {
+                        addLog(`获取状态失败 (${window.fetchStatusErrorCount}次): ${error}`, 'error');
+                    }
+                } else {
+                    addLog('获取状态失败: ' + error, 'error');
+                }
+                
                 throw error; // 将错误向上传递，保持Promise链
+            })
+            .finally(() => {
+                // 请求完成后清除引用
+                setTimeout(() => {
+                    window.fetchStatusPromise = null;
+                    window.fetchStatusPromiseTimestamp = null;
+                }, 600);
             });
+        
+        return window.fetchStatusPromise;
     }
 
     function sendCommand(endpoint, body = {}, method = 'POST', successMessagePrefix = '操作') {
@@ -520,7 +738,7 @@
                 addLog((successMessagePrefix ? successMessagePrefix + ": " : "") + (data.message || '成功'), 'success');
                 if (endpoint.includes('consume_pills')) {
                     if (data.consumed_med && data.consumed_count !== undefined) {
-                        addConsumptionLogEntry(data.consumed_med, data.consumed_count, data.weight_reduced_approx);
+                         addConsumptionLogEntry(data.consumed_med, data.consumed_count, data.weight_reduced_approx);
                     }
                 }
                 // 主动刷新状态获取最新数据
@@ -529,7 +747,7 @@
                     .catch(error => {
                         console.error("Error calling fetchStatus:", error);
                         addLog("获取最新状态失败，但操作可能已成功", "warn");
-                        return data;
+                return data;
                     });
             } else {
                 const errorMessage = (successMessagePrefix ? successMessagePrefix + "失败: " : "失败: ") + (data.message || '未知错误');
@@ -779,6 +997,30 @@
     function moveToWppStep(stepNumber, mode) {
         console.log(`移动到WPP步骤${stepNumber}，模式=${mode}`);
         
+        // 在进入步骤5之前，检查WPP是否已正确设置
+        if (stepNumber === 5) {
+            const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
+            if (!details || !details.wpp || details.wpp <= 0.0001) {
+                addLog("警告：WPP未正确设置，将使用实时重量进行临时计算", "warn");
+                // 在真实模式下，我们只发出警告，但不使用模拟接口
+                if (!currentIsSimulationGlobal) {
+                    addLog("真实模式下，请确保已通过Arduino正确测量并设置了WPP", "warn");
+                }
+                // 允许继续，但在模拟模式下使用实时重量作为临时WPP
+                else if (arduinoRawStateGlobal.total_weight_in_box_arduino !== undefined) {
+                    const tempWPP = parseFloat(arduinoRawStateGlobal.total_weight_in_box_arduino);
+                    if (tempWPP > 0) {
+                        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: tempWPP }, 'POST', `设置临时WPP为${tempWPP.toFixed(2)}g`)
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    addLog(`已设置临时WPP为${tempWPP.toFixed(2)}g`, "info");
+                                }
+                            });
+                    }
+                }
+            }
+        }
+        
         // 隐藏所有WPP步骤内容
         document.querySelectorAll('.wpp-step-content').forEach(el => {
             el.style.display = 'none';
@@ -798,8 +1040,57 @@
             wppSettingSection.style.display = 'block';
         }
         
-        // 步骤1
-        if (stepNumber === 1) {
+        // 根据步骤号显示对应内容
+        if (stepNumber === 4) {
+            const step4El = document.getElementById('wppStep4');
+            if (step4El) {
+                step4El.style.display = 'block';
+                // 强制刷新数据
+                fetchStatus();
+                // 更新确认信息
+                setTimeout(function() {
+                    document.getElementById('wppConfirmMedName').textContent = pcActiveMedicationNameGlobal || '-';
+                    const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
+                    if (details && details.wpp) {
+                        document.getElementById('wppConfirmValue').textContent = details.wpp.toFixed(3);
+                    } else {
+                        document.getElementById('wppConfirmValue').textContent = '-';
+                    }
+                    
+                    // 在真实模式下，显示实时重量
+                    if (!currentIsSimulationGlobal) {
+                        const realTimeWeightContainer = document.getElementById('realTimeWeightContainer');
+                        if (realTimeWeightContainer) {
+                            realTimeWeightContainer.style.display = 'block';
+                            // 开始实时重量监测
+                            startRealTimeWeightMeasurement();
+                        }
+                    }
+                }, 300);
+            }
+        } else if (stepNumber === 5) {
+            const step5El = document.getElementById('wppStep5');
+            if (step5El) {
+                step5El.style.display = 'block';
+                
+                // 根据模式显示或隐藏控件
+                const simControls = document.getElementById('weighingSimModeOnlyControls');
+                const realModeInfo = document.getElementById('weighingRealModeInfoForInventory');
+                
+                if (simControls && realModeInfo) {
+                    if (currentIsSimulationGlobal) {
+                        simControls.style.display = 'block';
+                        realModeInfo.style.display = 'none';
+                    } else {
+                        simControls.style.display = 'none';
+                        realModeInfo.style.display = 'block';
+                        
+                        // 在真实模式下，自动开始测量总重
+                        startRealTimeWeightMeasurement();
+                    }
+                }
+            }
+        } else if (stepNumber === 1) {
             const step1El = document.getElementById('wppStep1');
             if (step1El) step1El.style.display = 'block';
         } else if (stepNumber === 2) {
@@ -815,39 +1106,124 @@
             const step3El = document.getElementById(`wppStep3-${mode}`);
             if (step3El) {
                 step3El.style.display = 'block';
-                // 在模拟模式下显示手动输入框
+                // 为"真实/模拟环境"测量模式设置正确的UI
                 if (mode === 'real') {
+                    // 显示或隐藏模拟输入容器
                     const simulatedInputContainer = document.getElementById('simulatedWPPInputContainer');
                     if (simulatedInputContainer) {
                         simulatedInputContainer.style.display = currentIsSimulationGlobal ? 'block' : 'none';
                     }
-                }
-            }
-        } else if (stepNumber === 4) {
-            const step4El = document.getElementById('wppStep4');
-            if (step4El) {
-                step4El.style.display = 'block';
-                // 强制刷新数据
-                fetchStatus();
-                // 更新确认信息
-                setTimeout(function() {
-                    document.getElementById('wppConfirmMedName').textContent = pcActiveMedicationNameGlobal || '-';
-                    const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
-                    if (details && details.wpp) {
-                        document.getElementById('wppConfirmValue').textContent = details.wpp.toFixed(3);
+                    
+                    // 在真实模式下显示实时重量区域
+                    const realTimeWeightContainerInStep3 = document.getElementById('realTimeWeightContainerInStep3');
+                    if (realTimeWeightContainerInStep3 && !currentIsSimulationGlobal) {
+                        realTimeWeightContainerInStep3.style.display = 'block';
+                        
+                        // 开始实时重量监测，并更新步骤3的实时重量显示
+                        if (!window.step3WeightUpdateInterval) {
+                            // 添加错误计数和最后成功时间
+                            window.weightUpdateErrorCount = 0;
+                            window.lastSuccessfulWeightUpdate = Date.now();
+                            
+                            window.step3WeightUpdateInterval = setInterval(() => {
+                                fetch('/get_current_weight')
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        console.log("获取到实时重量数据:", data);
+                                        
+                                        // 检查返回的状态
+                                        if (data.status === 'error') {
+                                            console.error("获取重量出错:", data.message);
+                                            window.weightUpdateErrorCount++;
+                                            
+                                            // 显示错误状态
+                                            const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
+                                            if (weightValueEl) {
+                                                weightValueEl.textContent = "读取错误";
+                                                weightValueEl.classList.add('text-danger');
+                                            }
+                                            return;
+                                        }
+                                        
+                                        // 检查数据是否过期
+                                        if (data.age && data.age > 10) {
+                                            console.warn(`重量数据可能已过期 (${data.age.toFixed(1)}秒)`);
+                                            const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
+                                            if (weightValueEl) {
+                                                weightValueEl.textContent = parseFloat(data.weight).toFixed(2) + " (旧数据)";
+                                                weightValueEl.classList.add('text-warning');
+                                            }
+                                            return;
+                                        }
+                                        
+                                        if (data.weight !== undefined) {
+                                            // 重置错误计数
+                                            window.weightUpdateErrorCount = 0;
+                                            window.lastSuccessfulWeightUpdate = Date.now();
+                                            
+                                            const weight = parseFloat(data.weight);
+                                            const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
+                                            if (weightValueEl) {
+                                                weightValueEl.textContent = weight.toFixed(2);
+                                                console.log("更新实时重量显示:", weight.toFixed(2));
+                                                
+                                                // 添加重量变化视觉反馈
+                                                if (weight > 0.01) {
+                                                    weightValueEl.classList.add('text-success');
+                                                    weightValueEl.classList.remove('text-danger', 'text-warning');
                     } else {
-                        document.getElementById('wppConfirmValue').textContent = '-';
+                                                    weightValueEl.classList.add('text-danger');
+                                                    weightValueEl.classList.remove('text-success', 'text-warning');
+                                                }
+                                            }
+                                        }
+                                    })
+                                    .catch(error => {
+                                        console.error("获取重量失败:", error);
+                                        window.weightUpdateErrorCount++;
+                                        
+                                        // 检查是否需要显示连接问题警告
+                                        if (window.weightUpdateErrorCount >= 3) {
+                                            const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
+                                            if (weightValueEl) {
+                                                weightValueEl.textContent = "连接问题";
+                                                weightValueEl.classList.add('text-danger');
+                                                weightValueEl.classList.remove('text-success', 'text-warning');
+                                            }
+                                            
+                                            // 如果连续失败太多次，减慢请求频率
+                                            if (window.weightUpdateErrorCount > 10) {
+                                                clearInterval(window.step3WeightUpdateInterval);
+                                                window.step3WeightUpdateInterval = setInterval(() => {
+                                                    // 完整的重量获取代码
+                                                    fetch('/get_current_weight')
+                                                        .then(response => response.json())
+                                                        .then(data => {
+                                                            // 重置错误计数器
+                                                            if (data.status === 'success' && data.weight !== undefined) {
+                                                                window.weightUpdateErrorCount = 0;
+                                                                const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
+                                                                if (weightValueEl) {
+                                                                    const weight = parseFloat(data.weight);
+                                                                    weightValueEl.textContent = weight.toFixed(2);
+                                                                    weightValueEl.classList.remove('text-danger');
+                                                                    weightValueEl.classList.add('text-success');
+                                                                    console.log("恢复正常连接，重量更新正常");
+                                                                }
+                                                            }
+                                                        })
+                                                        .catch(error => {
+                                                            console.error("重连后仍然获取重量失败:", error);
+                                                        });
+                                                }, 2000); // 增加到2秒一次
+                                                console.log("由于连续错误，减慢重量更新频率");
+                                            }
+                                        }
+                                    });
+                            }, 500); // 更新频率改为500ms，更快地反馈重量变化
+                        }
                     }
-                }, 300);
-            }
-        } else if (stepNumber === 5) {
-            const step5El = document.getElementById('wppStep5');
-            if (step5El) {
-                step5El.style.display = 'block';
-                const simControls = document.getElementById('weighingSimModeOnlyControls');
-                const realInfo = document.getElementById('weighingRealModeInfoForInventory');
-                if (simControls) simControls.style.display = currentIsSimulationGlobal ? 'block' : 'none';
-                if (realInfo) realInfo.style.display = !currentIsSimulationGlobal ? 'block' : 'none';
+                }
             }
         } else if (stepNumber === 6) {
             const step6El = document.getElementById('wppStep6');
@@ -871,105 +1247,175 @@
                 }, 300);
             }
         }
+        
+        // 如果离开步骤3，清除步骤3的实时重量更新定时器
+        if (stepNumber !== 3 && window.step3WeightUpdateInterval) {
+            clearInterval(window.step3WeightUpdateInterval);
+            window.step3WeightUpdateInterval = null;
+        }
+        
         addLog(`WPP测量：进入步骤${stepNumber}${mode ? ` (${mode === 'simulated' ? '模拟' : '真实'}模式)` : ''}`, "info");
     }
 
-    function completeWppSetup() {
-        addLog(`完成 '${pcActiveMedicationNameGlobal}' 的WPP和库存设置`, "success");
-        // 重置到步骤1
-        moveToWppStep(1);
-    }
-
-    // 修改现有的WPP相关函数
-    function setWPPFromSimulatedSinglePillWeight() {
-        console.log("setWPPFromSimulatedSinglePillWeight called");
-        if (!pcActiveMedicationNameGlobal) { 
-            addLog("请先从列表选择一个药物作为当前操作药物，才能为其设置WPP。", "error"); 
-            return; 
-        }
-        const inputEl = document.getElementById('simulatedSinglePillWeightInput');
-        if (!inputEl) { 
-            console.error("simulatedSinglePillWeightInput not found"); 
-            return; 
-        }
-        const singlePillWeightStr = inputEl.value.trim();
-        if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr))) {
-            addLog("请输入有效的数字。", "error"); 
-            return;
-        }
-        const wpp = parseFloat(singlePillWeightStr);
-        if (wpp <= 0.0001) {
-            addLog("单粒药重必须大于0.0001g。", "error"); 
-            return;
-        }
-        
-        addLog(`设置 '${pcActiveMedicationNameGlobal}' 的WPP为 ${wpp}g...`, "info");
-        
-        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `设置 '${pcActiveMedicationNameGlobal}' WPP`)
-            .then(data => {
-                if (data.status === 'success') {
-                    // 清空输入框
-                    inputEl.value = '';
+    // 添加实时重量测量函数
+    function startRealTimeWeightMeasurement() {
+        if (!currentIsSimulationGlobal) {
+            addLog("开始实时测量总重...", "info");
+            // 显示实时重量显示区域
+            const realTimeWeightContainer = document.getElementById('realTimeWeightContainer');
+            if (realTimeWeightContainer) {
+                realTimeWeightContainer.style.display = 'block';
+            }
+            
+            // 清除之前可能存在的定时器
+            if (window.currentWeightUpdateInterval) {
+                clearInterval(window.currentWeightUpdateInterval);
+            }
+            
+            // 创建错误计数器
+            window.weightUpdateErrorCount = 0;
+            
+            // 每1000ms更新一次重量显示，减少请求频率
+            const weightUpdateInterval = setInterval(() => {
+                // 每次新的请求前检查是否有太多错误
+                if (window.weightUpdateErrorCount > 10) {
+                    addLog("由于连接问题，停止自动重量更新", "warn");
+                    clearInterval(weightUpdateInterval);
                     
-                    // 延迟获取最新数据并移动到步骤4
-                    setTimeout(() => {
+                    // 添加手动刷新按钮
+                    const realTimeWeightContainer = document.getElementById('realTimeWeightContainer');
+                    if (realTimeWeightContainer) {
+                        const refreshBtn = document.createElement('button');
+                        refreshBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
+                        refreshBtn.textContent = '手动刷新重量';
+                        refreshBtn.onclick = function() {
+                            fetchStatus()
+            .then(() => {
+                                    addLog("手动刷新重量成功", "success");
+                                })
+                                .catch(() => {
+                                    addLog("手动刷新重量失败", "error");
+                                });
+                        };
+                        realTimeWeightContainer.appendChild(refreshBtn);
+                    }
+                    return;
+                }
+                
+                // 单独获取重量，而不是完整状态，减少负载
+                fetch('/get_current_weight')
+                    .then(response => response.json())
+                    .then(data => {
+                        window.weightUpdateErrorCount = 0; // 重置错误计数
+                        
+                        if (data.weight !== undefined) {
+                            const realTimeWeightValue = document.getElementById('realTimeWeightValueInStep3');
+                            if (realTimeWeightValue) {
+                                realTimeWeightValue.textContent = parseFloat(data.weight).toFixed(2);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error("获取重量失败:", error);
+                        window.weightUpdateErrorCount++; // 增加错误计数
+                        
+                        // 尝试使用主状态数据中的重量
+                        if (arduinoRawStateGlobal.total_weight_in_box_arduino !== undefined) {
+                            const realTimeWeightValue = document.getElementById('realTimeWeightValue');
+                            if (realTimeWeightValue) {
+                                realTimeWeightValue.textContent = parseFloat(arduinoRawStateGlobal.total_weight_in_box_arduino).toFixed(2) + " (缓存)";
+                            }
+                        }
+                    });
+            }, 1000); // 增加到1秒一次
+            
+            // 存储interval ID以便后续清除
+            window.currentWeightUpdateInterval = weightUpdateInterval;
+            
+            // 在真实模式下，添加一个按钮让用户手动完成步骤
+            const step5El = document.getElementById('wppStep5');
+            if (step5El) {
+                // 检查是否已经添加了完成按钮
+                let completeRealModeBtn = document.getElementById('completeRealModeBtn');
+                if (!completeRealModeBtn) {
+                    completeRealModeBtn = document.createElement('button');
+                    completeRealModeBtn.id = 'completeRealModeBtn';
+                    completeRealModeBtn.className = 'btn btn-success btn-sm mt-3';
+                    completeRealModeBtn.textContent = '确认实时重量并完成设置';
+                    completeRealModeBtn.onclick = function() {
+                        // 直接移动到步骤6，不调用模拟接口
+                        if (window.currentWeightUpdateInterval) {
+                            clearInterval(window.currentWeightUpdateInterval);
+                        }
+                        
+                        // 即使无法获取最新状态，也允许继续
                         fetchStatus()
                             .then(() => {
-                                moveToWppStep(4);
-                                updateSummaryInfo();
-                            })
-                            .catch(err => {
-                                console.error("获取状态失败:", err);
-                                addLog("获取最新状态失败，但WPP设置可能已成功。", "warn");
-                                moveToWppStep(4);
-                            });
-                    }, 500);
-                } else {
-                    addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
-                }
+                                setTimeout(() => {
+                                    moveToWppStep(6);
+                                    updateSummaryInfo();
+                }, 500);
             })
-            .catch(err => {
-                console.error("设置WPP时发生错误:", err);
-                addLog(`设置WPP失败: ${err.message || err}`, "error");
-            });
-    }
-     function measureSinglePillForActiveMedReal() {
-        console.log("measureSinglePillForActiveMedReal called, sim mode:", currentIsSimulationGlobal);
-        if (!pcActiveMedicationNameGlobal) { addLog("请先选择药物以测量其单片重。", "error"); return; }
-        if (currentIsSimulationGlobal) { 
-            const singlePillWeightStr = prompt(`模拟真实测量: 请为药物 "${pcActiveMedicationNameGlobal}" 输入单粒药的模拟重量 (g):`, "0.25");
-            if (singlePillWeightStr === null) { console.log("Simulated real measurement cancelled by user."); return; }
-            if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr)) || parseFloat(singlePillWeightStr) <= 0.0001) {
-                 addLog("无效的模拟测量重量。", "error"); return;
-            }
-            const wpp = parseFloat(singlePillWeightStr);
-            sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `(模拟的真实测量) 设置 '${pcActiveMedicationNameGlobal}' WPP`)
-                .then(data => {
-                    if(data.status === 'success') {
-                        // 移动到步骤4
-                        moveToWppStep(4);
-                    }
-                });
-        } else { 
-            sendCommand('/measure_single_pill_real_mode_for_active_med', {}, 'POST', `命令Arduino测量 '${pcActiveMedicationNameGlobal}' 单片重`)
-                .then(data => {
-                    if(data.status === 'success') {
-                        addLog(`正在测量 '${pcActiveMedicationNameGlobal}' 的单片重，请等待结果...`, "info");
-                        // 真实模式下，Arduino会测量并更新WPP，之后会通过updateUI中更新
-                        setTimeout(() => {
-                            fetchStatus().then(() => {
-                                if(pcActiveMedicationNameGlobal) {
-                                    const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
-                                    if(details && details.wpp) {
-                                        // 移动到步骤4
-                                        moveToWppStep(4);
-                                    }
-                                }
+                            .catch(() => {
+                                // 即使状态获取失败，也继续流程
+                                addLog("无法刷新状态，但将继续进行设置", "warn");
+                                setTimeout(() => {
+                                    moveToWppStep(6);
+                                    updateSummaryInfo();
+                                }, 500);
                             });
-                        }, 2000); // 延迟2秒以给Arduino时间测量和更新
+                    };
+                    
+                    // 找到合适的位置添加按钮
+                    const realModeInfoEl = document.getElementById('weighingRealModeInfoForInventory');
+                    if (realModeInfoEl) {
+                        realModeInfoEl.after(completeRealModeBtn);
+                        realModeInfoEl.style.display = 'block';
+                    } else {
+                        step5El.appendChild(completeRealModeBtn);
                     }
-                });
+                }
+            }
         }
+    }
+
+    // 添加使用实时重量更新库存的函数
+    function setInventoryByRealTimeWeight(weight) {
+        if (!pcActiveMedicationNameGlobal) {
+            addLog("请先选择药物", "error");
+            return;
+        }
+        
+        // 在真实模式下，不应该调用模拟接口
+        if (!currentIsSimulationGlobal) {
+            addLog(`在真实模式下，药盒总重和数量由实际传感器读数决定，无需手动更新`, "info");
+            
+            // 直接获取最新数据并进入完成步骤
+            fetchStatus().then(() => {
+                setTimeout(() => {
+                    moveToWppStep(6);
+                    updateSummaryInfo();
+                }, 500);
+            });
+            
+            return;
+        }
+        
+        // 在模拟模式下继续使用模拟接口
+        addLog(`使用实时重量 ${weight.toFixed(2)}g 更新 '${pcActiveMedicationNameGlobal}' 库存...`, "info");
+        
+        sendCommand('/set_simulated_total_weight_for_active_med', { weight: weight }, 'POST', `通过实时重量更新 '${pcActiveMedicationNameGlobal}' 库存`)
+                .then(data => {
+                if (data && data.status === 'success') {
+                    addLog(`库存更新成功，进入完成步骤...`, "success");
+                            fetchStatus().then(() => {
+                        setTimeout(() => {
+                            moveToWppStep(6);
+                            updateSummaryInfo();
+                        }, 500);
+                    });
+                }
+            });
     }
 
     // --- Weighing Stage: Update Inventory for Active Med (Section 2) ---
@@ -1303,6 +1749,29 @@
                 if (!currentIsSimulationGlobal && arduinoRawStateGlobal.total_weight_in_box_arduino !== undefined) {
                     realTimeWeightContainer.style.display = 'block';
                     realTimeWeightValue.textContent = parseFloat(arduinoRawStateGlobal.total_weight_in_box_arduino).toFixed(2);
+                    
+                    // 只在模拟模式下检测重量稳定并自动更新库存
+                    if (currentIsSimulationGlobal && window.lastWeightReadings) {
+                        window.lastWeightReadings.push(parseFloat(arduinoRawStateGlobal.total_weight_in_box_arduino));
+                        if (window.lastWeightReadings.length > 3) {
+                            window.lastWeightReadings.shift();
+                        }
+                        
+                        if (window.lastWeightReadings.length === 3) {
+                            const maxDiff = Math.max(...window.lastWeightReadings) - Math.min(...window.lastWeightReadings);
+                            if (maxDiff < 0.01) {
+                                // 重量稳定，自动更新库存
+                                const stableWeight = window.lastWeightReadings.reduce((a, b) => a + b) / 3;
+                                setInventoryByRealTimeWeight(stableWeight);
+                                // 清除定时器
+                                if (window.currentWeightUpdateInterval) {
+                                    clearInterval(window.currentWeightUpdateInterval);
+                                }
+                            }
+                        }
+                    } else if (currentIsSimulationGlobal) {
+                        window.lastWeightReadings = [];
+                    }
                 } else {
                     realTimeWeightContainer.style.display = 'none';
                 }
@@ -1414,15 +1883,15 @@
         console.log("当前药物详情:", details);
         
         try {
-            // 更新步骤4的确认信息
+        // 更新步骤4的确认信息
             const wppConfirmMedName = document.getElementById('wppConfirmMedName');
             const wppConfirmValue = document.getElementById('wppConfirmValue');
             if (wppConfirmMedName) wppConfirmMedName.textContent = pcActiveMedicationNameGlobal || '-';
             if (wppConfirmValue) {
                 wppConfirmValue.textContent = details && details.wpp ? parseFloat(details.wpp).toFixed(3) : '-';
-            }
-            
-            // 更新步骤6的摘要信息
+        }
+        
+        // 更新步骤6的摘要信息
             const summaryMedName = document.getElementById('summaryMedName');
             const summaryWPP = document.getElementById('summaryWPP');
             const summaryCount = document.getElementById('summaryCount');
@@ -1442,6 +1911,358 @@
         } catch (error) {
             console.error("更新摘要信息时发生错误:", error);
             addLog("更新摘要信息时发生错误: " + error.message, "error");
+        }
+    }
+
+    // 修改现有的WPP相关函数
+    function setWPPFromSimulatedSinglePillWeight() {
+        console.log("setWPPFromSimulatedSinglePillWeight called");
+        if (!pcActiveMedicationNameGlobal) { 
+            addLog("请先从列表选择一个药物作为当前操作药物，才能为其设置WPP。", "error"); 
+            return; 
+        }
+        const inputEl = document.getElementById('simulatedSinglePillWeightInput');
+        if (!inputEl) { 
+            console.error("simulatedSinglePillWeightInput not found"); 
+            return; 
+        }
+        const singlePillWeightStr = inputEl.value.trim();
+        if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr))) {
+            addLog("请输入有效的数字。", "error"); 
+            return;
+        }
+        const wpp = parseFloat(singlePillWeightStr);
+        if (wpp <= 0.0001) {
+            addLog("单粒药重必须大于0.0001g。", "error"); 
+            return;
+        }
+        
+        addLog(`设置 '${pcActiveMedicationNameGlobal}' 的WPP为 ${wpp}g...`, "info");
+        
+        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `设置 '${pcActiveMedicationNameGlobal}' WPP`)
+            .then(data => {
+                if (data.status === 'success') {
+                    // 清空输入框
+                    inputEl.value = '';
+                    
+                    // 延迟获取最新数据并移动到步骤4
+                    setTimeout(() => {
+                        fetchStatus()
+                            .then(() => {
+                                moveToWppStep(4);
+                                updateSummaryInfo();
+                            })
+                            .catch(err => {
+                                console.error("获取状态失败:", err);
+                                addLog("获取最新状态失败，但WPP设置可能已成功。", "warn");
+                                moveToWppStep(4);
+                            });
+                    }, 500);
+        } else {
+                    addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
+                }
+            })
+            .catch(err => {
+                console.error("设置WPP时发生错误:", err);
+                addLog(`设置WPP失败: ${err.message || err}`, "error");
+            });
+    }
+    
+    // 添加"真实/模拟"模式下的模拟重量输入处理函数
+    function setWPPFromRealModeSimulatedWeight() {
+        console.log("setWPPFromRealModeSimulatedWeight called");
+        if (!pcActiveMedicationNameGlobal) { 
+            addLog("请先从列表选择一个药物作为当前操作药物，才能为其设置WPP。", "error"); 
+            return; 
+        }
+        const inputEl = document.getElementById('simulatedRealModeWeightInput');
+        if (!inputEl) { 
+            console.error("simulatedRealModeWeightInput not found"); 
+            return; 
+        }
+        const singlePillWeightStr = inputEl.value.trim();
+        if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr))) {
+            addLog("请输入有效的数字。", "error"); 
+            return;
+        }
+        const wpp = parseFloat(singlePillWeightStr);
+        if (wpp <= 0.0001) {
+            addLog("单粒药重必须大于0.0001g。", "error"); 
+            return;
+        }
+        
+        addLog(`设置 '${pcActiveMedicationNameGlobal}' 的WPP为 ${wpp}g...`, "info");
+        
+        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `设置 '${pcActiveMedicationNameGlobal}' WPP`)
+            .then(data => {
+                if (data.status === 'success') {
+                    // 清空输入框
+                    inputEl.value = '';
+                    
+                    // 延迟获取最新数据并移动到步骤4
+                    setTimeout(() => {
+                        fetchStatus()
+                            .then(() => {
+                                moveToWppStep(4);
+                                updateSummaryInfo();
+                            })
+                            .catch(err => {
+                                console.error("获取状态失败:", err);
+                                addLog("获取最新状态失败，但WPP设置可能已成功。", "warn");
+                                moveToWppStep(4);
+                            });
+                    }, 500);
+                } else {
+                    addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
+                }
+            })
+            .catch(err => {
+                console.error("设置WPP时发生错误:", err);
+                addLog(`设置WPP失败: ${err.message || err}`, "error");
+            });
+    }
+    
+     function measureSinglePillForActiveMedReal() {
+        console.log("measureSinglePillForActiveMedReal called, sim mode:", currentIsSimulationGlobal);
+        if (!pcActiveMedicationNameGlobal) { addLog("请先选择药物以测量其单片重。", "error"); return; }
+        
+        if (currentIsSimulationGlobal) { 
+            const singlePillWeightStr = prompt(`模拟真实测量: 请为药物 "${pcActiveMedicationNameGlobal}" 输入单粒药的模拟重量 (g):`, "0.25");
+            if (singlePillWeightStr === null) { console.log("Simulated real measurement cancelled by user."); return; }
+            if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr)) || parseFloat(singlePillWeightStr) <= 0.0001) {
+                 addLog("无效的模拟测量重量。", "error"); return;
+            }
+            const wpp = parseFloat(singlePillWeightStr);
+            sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `(模拟的真实测量) 设置 '${pcActiveMedicationNameGlobal}' WPP`)
+                .then(data => {
+                    if(data.status === 'success') {
+                        // 移动到步骤4
+                        moveToWppStep(4);
+                    }
+                });
+        } else { 
+            // 在真实模式下测量单片药重
+            // 首先显示加载指示和反馈
+            const confirmBtn = document.getElementById('confirmRealMeasurementBtn');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 测量中...';
+            }
+            
+            addLog(`正在命令Arduino测量 '${pcActiveMedicationNameGlobal}' 的单片重，请等待...`, "info");
+            
+            sendCommand('/measure_single_pill_real_mode_for_active_med', {}, 'POST', `命令Arduino测量 '${pcActiveMedicationNameGlobal}' 单片重`)
+                .then(data => {
+                    if(data.status === 'success') {
+                        addLog(`正在测量 '${pcActiveMedicationNameGlobal}' 的单片重，请等待结果...`, "info");
+                        
+                        // 获取初始WPP以便检测变化
+                        let initialWpp = null;
+                        if (pcActiveMedicationNameGlobal && pc_managed_medication_details[pcActiveMedicationNameGlobal]) {
+                            initialWpp = pc_managed_medication_details[pcActiveMedicationNameGlobal].wpp;
+                        }
+                        
+                        // 定义一个函数来检查WPP是否已更新
+                        let attempts = 0;
+                        const checkWppUpdated = function() {
+                            attempts++;
+                            
+                            // 尝试获取最新状态
+                            fetchStatus()
+                                .then(() => {
+                                    // 检查WPP是否已更新
+                                    if (pcActiveMedicationNameGlobal && pc_managed_medication_details[pcActiveMedicationNameGlobal]) {
+                                        const currentWpp = pc_managed_medication_details[pcActiveMedicationNameGlobal].wpp;
+                                        
+                                        // 如果WPP已更新或已有有效WPP
+                                        if ((initialWpp === null && currentWpp > 0.0001) || 
+                                            (initialWpp !== null && Math.abs(currentWpp - initialWpp) > 0.0001)) {
+                                            addLog(`成功测量并更新 '${pcActiveMedicationNameGlobal}' 的WPP为 ${currentWpp.toFixed(3)}g`, "success");
+                                            
+                                            // 重置按钮状态
+                                            if (confirmBtn) {
+                                                confirmBtn.disabled = false;
+                                                confirmBtn.textContent = '确认测量单片重量';
+                                            }
+                                            
+                                            // 移动到步骤4
+                                            moveToWppStep(4);
+                                            return;
+                                        }
+                                    }
+                                    
+                                    // 如果尚未更新但尝试次数未达上限，继续尝试
+                                    if (attempts < 10) {
+                                        setTimeout(checkWppUpdated, 1000);
+                                    } else {
+                                        // 尝试次数过多，提供手动继续选项
+                                        addLog(`未能自动检测到WPP更新，但操作可能已成功。您可以点击下方按钮继续。`, "warn");
+                                        
+                                        // 重置按钮状态并更改为继续按钮
+                                        if (confirmBtn) {
+                                            confirmBtn.disabled = false;
+                                            confirmBtn.textContent = '手动继续到下一步';
+                                            confirmBtn.onclick = function() {
+                                                moveToWppStep(4);
+                                            };
+                                        }
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error("检查WPP更新时出错:", error);
+                                    
+                                    // 如果出错但尝试次数未达上限，继续尝试
+                                    if (attempts < 5) {
+                                        setTimeout(checkWppUpdated, 1000);
+                                    } else {
+                                        // 尝试次数过多，提供手动继续选项
+                                        addLog(`由于连接问题，无法检测WPP更新，但操作可能已成功。`, "warn");
+                                        
+                                        // 重置按钮状态并更改为继续按钮
+                                        if (confirmBtn) {
+                                            confirmBtn.disabled = false;
+                                            confirmBtn.textContent = '手动继续到下一步';
+                                            confirmBtn.onclick = function() {
+                                                moveToWppStep(4);
+                                            };
+                                        }
+                                    }
+                                });
+                        };
+                        
+                        // 开始检查WPP更新
+                        setTimeout(checkWppUpdated, 1500);
+                    } else {
+                        // 命令发送失败，重置按钮状态
+                        if (confirmBtn) {
+                            confirmBtn.disabled = false;
+                            confirmBtn.textContent = '确认测量单片重量';
+                        }
+                        addLog(`命令Arduino测量单片重失败: ${data.message || '未知错误'}`, "error");
+                    }
+                })
+                .catch(error => {
+                    // 出错时重置按钮状态
+                    if (confirmBtn) {
+                        confirmBtn.disabled = false;
+                        confirmBtn.textContent = '确认测量单片重量';
+                    }
+                    addLog(`命令Arduino测量单片重时出错: ${error.message || error}`, "error");
+                });
+        }
+    }
+
+    function moveToStep4WithCurrentWeight() {
+        // 在真实模式下，使用当前重量作为WPP值
+        if (!currentIsSimulationGlobal) {
+            // 显示加载指示器
+            addLog("正在获取最新重量数据...", "info");
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.className = 'text-center mt-2';
+            loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div><div class="mt-1">获取重量中...</div>';
+            
+            const weightContainer = document.getElementById('realTimeWeightContainerInStep3');
+            if (weightContainer) {
+                weightContainer.appendChild(loadingIndicator);
+            }
+            
+            // 主动获取一次最新重量，确保数据准确
+            fetch('/get_current_weight')
+                .then(response => response.json())
+                .then(data => {
+                    // 移除加载指示器
+                    if (loadingIndicator && loadingIndicator.parentNode) {
+                        loadingIndicator.parentNode.removeChild(loadingIndicator);
+                    }
+                    
+                    let currentWeight = 0;
+                    let weightSource = "";
+                    
+                    if (data.status === 'success' && data.weight !== undefined) {
+                        currentWeight = parseFloat(data.weight);
+                        weightSource = "API";
+                        console.log("获取到最新重量:", currentWeight);
+                    } else {
+                        // 如果API返回错误，尝试使用显示的值
+                        try {
+                            currentWeight = parseFloat(document.getElementById('realTimeWeightValueInStep3').textContent);
+                            weightSource = "显示值";
+                            console.log("使用显示的重量:", currentWeight);
+                        } catch (e) {
+                            console.error("无法解析显示的重量值:", e);
+                        }
+                    }
+                    
+                    if (!isNaN(currentWeight) && currentWeight > 0.0001) {
+                        addLog(`使用${weightSource}获取的重量: ${currentWeight.toFixed(3)}g`, "info");
+                        
+                        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: currentWeight }, 'POST', `设置WPP为当前重量`)
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    addLog(`已设置WPP为当前重量: ${currentWeight.toFixed(3)}g`, "success");
+                                    
+                                    // 清除步骤3的实时重量更新定时器
+                                    if (window.step3WeightUpdateInterval) {
+                                        clearInterval(window.step3WeightUpdateInterval);
+                                        window.step3WeightUpdateInterval = null;
+                                    }
+                                    
+                                    moveToWppStep(4);
+                                } else {
+                                    addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
+                                }
+                            })
+                            .catch(error => {
+                                addLog(`设置WPP时发生错误: ${error.message || error}`, "error");
+                            });
+                    } else {
+                        addLog("当前重量无效或太小 (小于0.0001g)，请重新测量", "error");
+                    }
+                })
+                .catch(error => {
+                    // 移除加载指示器
+                    if (loadingIndicator && loadingIndicator.parentNode) {
+                        loadingIndicator.parentNode.removeChild(loadingIndicator);
+                    }
+                    
+                    console.error("获取最新重量失败:", error);
+                    addLog("获取最新重量失败，尝试使用显示的值", "warn");
+                    
+                    // 尝试使用显示的值
+                    try {
+                        let displayedWeight = parseFloat(document.getElementById('realTimeWeightValueInStep3').textContent);
+                        if (!isNaN(displayedWeight) && displayedWeight > 0.0001) {
+                            addLog(`使用显示的重量值: ${displayedWeight.toFixed(3)}g`, "info");
+                            
+                            sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: displayedWeight }, 'POST', `设置WPP为显示重量`)
+                                .then(data => {
+                                    if (data.status === 'success') {
+                                        addLog(`已设置WPP为显示重量: ${displayedWeight.toFixed(3)}g`, "success");
+                                        moveToWppStep(4);
+                                    } else {
+                                        addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
+                                    }
+                                })
+                                .catch(error => {
+                                    addLog(`设置WPP时发生错误: ${error.message || error}`, "error");
+                                });
+                        } else {
+                            addLog("显示的重量值无效，请重新测量", "error");
+                        }
+                    } catch (e) {
+                        addLog("无法读取显示的重量值，请重新测量", "error");
+                        console.error("解析显示重量出错:", e);
+                    }
+                });
+        } else {
+            // 在模拟模式下，检查是否已输入重量
+            const inputEl = document.getElementById('simulatedRealModeWeightInput');
+            if (inputEl && inputEl.value && parseFloat(inputEl.value) > 0.0001) {
+                setWPPFromRealModeSimulatedWeight();
+            } else {
+                addLog("请先输入有效的模拟重量", "warn");
+                moveToWppStep(4);
+            }
         }
     }
 </script>

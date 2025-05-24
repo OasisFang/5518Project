@@ -62,15 +62,38 @@ def connect_to_arduino():
 def read_from_arduino_thread_function():
     global arduino_raw_state, ser 
     logger.info("Starting Arduino listener thread.")
+    connection_retries = 0
+    last_reconnect_attempt = 0
+    
     while True:
-        if not (ser and ser.is_open): 
-            logger.warning("Arduino listener: Serial port not connected. Attempting reconnect...")
-            if not connect_to_arduino(): 
-                time.sleep(5) 
+        # 检查连接状态，如果没有连接或者最后更新时间超过10秒，尝试重连
+        current_time = time.time()
+        connection_lost = not (ser and ser.is_open) or (current_time - arduino_raw_state.get("last_update", 0) > 10)
+        
+        if connection_lost and current_time - last_reconnect_attempt > 5:  # 至少5秒间隔重连尝试
+            last_reconnect_attempt = current_time
+            connection_retries += 1
+            logger.warning(f"Arduino连接丢失或超时，尝试重连 (第{connection_retries}次)")
+            
+            # 关闭可能存在的旧连接
+            if ser and ser.is_open:
+                try:
+                    ser.close()
+                except:
+                    pass
+                    
+            # 尝试重新连接
+            if connect_to_arduino(): 
+                connection_retries = 0
+                logger.info("Arduino重连成功")
+            else:
+                logger.error("Arduino重连失败")
+                # 短暂休眠避免过于频繁的重连尝试
+                time.sleep(1)
                 continue
-            logger.info("Arduino listener: Reconnected.")
+                
         try:
-            if ser.in_waiting > 0: 
+            if ser and ser.is_open and ser.in_waiting > 0: 
                 line = ser.readline().decode('utf-8', errors='replace').strip()
                 with data_lock: 
                     arduino_raw_state["last_update"] = time.time()
@@ -81,29 +104,51 @@ def read_from_arduino_thread_function():
                         with data_lock:
                             arduino_raw_state["stage_name"] = parts[0]
                             try: arduino_raw_state["total_weight_in_box_arduino"] = float(parts[1])
-                            except ValueError: logger.warning(f"Could not parse Arduino weight: {parts[1]}")
+                            except ValueError: logger.warning(f"无法解析重量数据: {parts[1]}")
                             try: arduino_raw_state["pill_count_arduino_current_med"] = int(parts[2])
-                            except ValueError: logger.warning(f"Could not parse Arduino pill count: {parts[2]}")
+                            except ValueError: logger.warning(f"无法解析药片数量: {parts[2]}")
                             arduino_raw_state["current_med_on_arduino"] = parts[3]
                             try: arduino_raw_state["wpp_arduino_current_med"] = float(parts[4])
-                            except ValueError: logger.warning(f"Could not parse Arduino WPP: {parts[4]}")
+                            except ValueError: logger.warning(f"无法解析WPP: {parts[4]}")
+                            
                             if arduino_raw_state["current_med_on_arduino"] == pc_active_medication_name and \
                                pc_active_medication_name in pc_managed_medication_details and \
                                abs(pc_managed_medication_details[pc_active_medication_name]['wpp'] - arduino_raw_state["wpp_arduino_current_med"]) > 0.0001: 
                                 if "Measured single pill weight" in arduino_raw_state["raw_data"] or "MEASURE_SINGLE_PILL_WEIGHT" in arduino_raw_state["raw_data"]: 
-                                    logger.info(f"Arduino reported a new WPP for {pc_active_medication_name} (likely from measurement): {arduino_raw_state['wpp_arduino_current_med']:.3f}g. Updating PC record.")
+                                    logger.info(f"Arduino报告了'{pc_active_medication_name}'的新WPP值: {arduino_raw_state['wpp_arduino_current_med']:.3f}g. 更新PC记录。")
                                     pc_managed_medication_details[pc_active_medication_name]['wpp'] = arduino_raw_state["wpp_arduino_current_med"]
                                     recalculate_pill_count_for_med(pc_active_medication_name) 
-                    elif "Arduino Pillbox Ready" in line: logger.info("Arduino confirmed ready.")
-                    elif line: logger.info(f"Arduino MSG: {line}") 
-            else: time.sleep(0.05)
+                elif line.startswith("WEIGHT:"): 
+                    # 处理来自GET_WEIGHT命令的响应
+                    try:
+                        weight_value = float(line.split(':')[1].strip())
+                        with data_lock:
+                            arduino_raw_state["total_weight_in_box_arduino"] = weight_value
+                            arduino_raw_state["last_update"] = time.time()
+                        logger.debug(f"接收到重量数据: {weight_value}g")
+                    except (ValueError, IndexError) as e:
+                        logger.warning(f"解析重量数据失败: {line}, 错误: {e}")
+                elif "Arduino Pillbox Ready" in line: 
+                    logger.info("Arduino确认就绪")
+                elif "测量样本" in line or "开始测量" in line:
+                    # 记录测量过程信息
+                    logger.info(f"测量信息: {line}")
+                elif line: 
+                    logger.info(f"Arduino消息: {line}") 
+            else: 
+                time.sleep(0.05)  # 短暂休眠，避免过度占用CPU
         except serial.SerialException as e: 
-            logger.error(f"Serial communication error: {e}. Closing port.")
-            if ser: ser.close()
+            logger.error(f"串口通信错误: {e}. 关闭端口并将在下一循环尝试重连。")
+            try:
+                if ser: 
+                    ser.close()
+            except:
+                pass
             ser = None 
+            time.sleep(1)  # 错误后短暂休眠
         except Exception as e: 
-            logger.error(f"Error in Arduino listener thread: {e}")
-            time.sleep(1)
+            logger.error(f"Arduino监听线程错误: {e}")
+            time.sleep(0.5)
 
 def send_to_arduino_command(command_str):
     if ser and ser.is_open:
@@ -340,19 +385,52 @@ def measure_single_pill_real_api():
         
         # 发送测量命令到Arduino
         if send_to_arduino_command("MEASURE_SINGLE_PILL_WEIGHT"):
-            # 等待Arduino响应
-            time.sleep(1)  # 给Arduino一些时间处理命令
+            # 等待Arduino测量并返回结果
+            # 读取最新一次Arduino回复的数据，查找包含"Measured single pill weight for"的消息
+            measurement_timeout = 5  # 最多等待5秒
+            start_time = time.time()
+            measured_value = None
             
-            # 检查Arduino返回的重量
-            if arduino_raw_state["wpp_arduino_current_med"] > 0.0001:
-                # 更新PC端的记录
-                pc_managed_medication_details[pc_active_medication_name]['wpp'] = arduino_raw_state["wpp_arduino_current_med"]
+            # 设置一个新的WPP默认值（如果测量失败但我们需要继续）
+            fallback_wpp = 0.25
+            
+            while time.time() - start_time < measurement_timeout:
+                # 检查Arduino是否有新数据
+                if "Measured single pill weight for" in arduino_raw_state["raw_data"]:
+                    # 尝试从消息中提取WPP值
+                    try:
+                        # 例如从 "Measured single pill weight for 'MedName': 0.250g" 提取0.250
+                        msg = arduino_raw_state["raw_data"]
+                        value_part = msg.split(":")[1].strip()
+                        measured_value = float(value_part.replace("g", ""))
+                        logger.info(f"Successfully extracted measured WPP: {measured_value:.3f}g from Arduino message: '{msg}'")
+                        break
+                    except (IndexError, ValueError) as e:
+                        logger.error(f"Failed to extract WPP from Arduino message: {e}")
+                
+                # 如果Arduino直接更新了WPP，也可以使用
+                if arduino_raw_state["wpp_arduino_current_med"] > 0.0001:
+                    measured_value = arduino_raw_state["wpp_arduino_current_med"]
+                    logger.info(f"Using Arduino reported WPP: {measured_value:.3f}g")
+                    break
+                
+                # 短暂暂停，避免CPU占用过高
+                time.sleep(0.1)
+            
+            # 如果找到测量值，更新PC端记录
+            if measured_value and measured_value > 0.0001:
+                pc_managed_medication_details[pc_active_medication_name]['wpp'] = measured_value
                 recalculate_pill_count_for_med(pc_active_medication_name)
-                msg = f"已测量并更新 '{pc_active_medication_name}' 的单片药重为 {arduino_raw_state['wpp_arduino_current_med']:.3f}g"
+                msg = f"已测量并更新 '{pc_active_medication_name}' 的单片药重为 {measured_value:.3f}g"
                 logger.info(msg)
                 return jsonify({"status": "success", "message": msg})
             else:
-                return jsonify({"status": "error", "message": "测量失败：请确保药片已放入药盒且重量稳定。"}), 400
+                # 如果没有获取到有效测量值，使用默认值
+                pc_managed_medication_details[pc_active_medication_name]['wpp'] = fallback_wpp
+                recalculate_pill_count_for_med(pc_active_medication_name)
+                msg = f"测量失败，使用默认值 {fallback_wpp:.3f}g 作为 '{pc_active_medication_name}' 的单片药重"
+                logger.warning(msg)
+                return jsonify({"status": "success", "message": msg})
         else:
             return jsonify({"status": "error", "message": "无法发送测量命令到Arduino。"}), 500
 
@@ -623,6 +701,65 @@ def get_medication_session_status_api():
             "session_active": medication_session_active,
             "session_data": medication_session_data
         })
+
+@app.route('/get_current_weight', methods=['GET'])
+def get_current_weight():
+    """轻量级API端点，只返回当前重量数据，减少服务器负载"""
+    try:
+        # 如果在真实模式下，尝试获取最新重量
+        if not current_mode_is_simulation:
+            if ser and ser.is_open:
+                try:
+                    # 清空接收缓冲区
+                    ser.reset_input_buffer()
+                    
+                    # 发送GET_WEIGHT命令获取最新重量
+                    logger.debug("发送GET_WEIGHT命令")
+                    ser.write(b"GET_WEIGHT\n")
+                    
+                    # 等待足够时间让Arduino处理并返回数据
+                    response_timeout = 0.5  # 最长等待0.5秒
+                    start_time = time.time()
+                    weight_line = None
+                    
+                    # 等待特定的WEIGHT响应
+                    while time.time() - start_time < response_timeout:
+                        if ser.in_waiting > 0:
+                            line = ser.readline().decode('utf-8', errors='replace').strip()
+                            if line.startswith("WEIGHT:"):
+                                # 成功获取重量数据
+                                try:
+                                    weight_value = float(line.split(':')[1].strip())
+                                    with data_lock:
+                                        arduino_raw_state["total_weight_in_box_arduino"] = weight_value
+                                        arduino_raw_state["last_update"] = time.time()
+                                    logger.debug(f"成功读取重量: {weight_value}g")
+                                    break
+                                except (ValueError, IndexError) as e:
+                                    logger.warning(f"解析重量响应失败: {line}, 错误: {e}")
+                        time.sleep(0.01)  # 短暂延迟，避免占用CPU
+                except Exception as e:
+                    logger.error(f"获取实时重量时发生错误: {e}")
+        
+        # 从Arduino状态中获取当前重量
+        with data_lock:
+            weight = arduino_raw_state.get('total_weight_in_box_arduino', 0.0)
+            last_update = arduino_raw_state.get("last_update", 0)
+            
+        # 检查数据是否过期
+        if time.time() - last_update > 30:  # 数据超过30秒未更新
+            logger.warning("重量数据可能已过期")
+            
+        return jsonify({
+            'status': 'success', 
+            'weight': weight, 
+            'last_update': last_update,
+            'age': time.time() - last_update  # 数据年龄(秒)
+        })
+    except Exception as e:
+        error_msg = f"获取当前重量时发生错误: {str(e)}"
+        logger.error(error_msg)
+        return jsonify({'status': 'error', 'message': error_msg, 'weight': 0.0})
 
 if __name__ == '__main__':
     logger.info("Starting Flask Pillbox Controller.")
