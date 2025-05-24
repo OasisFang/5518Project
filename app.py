@@ -331,20 +331,30 @@ def set_wpp_for_active_med_pc_and_arduino_api():
 
 @app.route('/measure_single_pill_real_mode_for_active_med', methods=['POST'])
 def measure_single_pill_real_api():
-    if current_mode_is_simulation: 
-        return jsonify({"status": "error", "message": "This specific measurement command is for Real Mode hardware."}), 403
-    if not pc_active_medication_name:
-        return jsonify({"status": "error", "message": "No PC active medication selected to measure for."}), 400
-    with data_lock: 
-        current_arduino_med = arduino_raw_state.get("current_med_on_arduino")
-        if pc_active_medication_name != current_arduino_med: 
-            logger.info(f"PC active med '{pc_active_medication_name}' differs from Arduino's '{current_arduino_med}'. Sending SELECT_MEDICATION to Arduino first.")
-            send_to_arduino_command(f"SELECT_MEDICATION:{pc_active_medication_name}")
-            time.sleep(0.1) 
-    if send_to_arduino_command("MEASURE_SINGLE_PILL_WEIGHT"): 
-        msg = f"Command sent to Arduino to measure single pill weight for '{pc_active_medication_name}'. Place one pill and wait for status update. The new WPP will be reflected from Arduino's next data report."
-        return jsonify({"status": "success", "message": msg})
-    return jsonify({"status": "error", "message": "Failed to send measure_single_pill_weight command."}), 500
+    global pc_managed_medication_details, pc_active_medication_name
+    with data_lock:
+        if not pc_active_medication_name:
+            return jsonify({"status": "error", "message": "请先选择要测量的药物。"}), 400
+        if current_mode_is_simulation:
+            return jsonify({"status": "error", "message": "当前处于模拟模式，请切换到真实模式后再测量。"}), 400
+        
+        # 发送测量命令到Arduino
+        if send_to_arduino_command("MEASURE_SINGLE_PILL_WEIGHT"):
+            # 等待Arduino响应
+            time.sleep(1)  # 给Arduino一些时间处理命令
+            
+            # 检查Arduino返回的重量
+            if arduino_raw_state["wpp_arduino_current_med"] > 0.0001:
+                # 更新PC端的记录
+                pc_managed_medication_details[pc_active_medication_name]['wpp'] = arduino_raw_state["wpp_arduino_current_med"]
+                recalculate_pill_count_for_med(pc_active_medication_name)
+                msg = f"已测量并更新 '{pc_active_medication_name}' 的单片药重为 {arduino_raw_state['wpp_arduino_current_med']:.3f}g"
+                logger.info(msg)
+                return jsonify({"status": "success", "message": msg})
+            else:
+                return jsonify({"status": "error", "message": "测量失败：请确保药片已放入药盒且重量稳定。"}), 400
+        else:
+            return jsonify({"status": "error", "message": "无法发送测量命令到Arduino。"}), 500
 
 @app.route('/consume_pills_for_active_med', methods=['POST'])
 def consume_pills_pc_api():

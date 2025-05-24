@@ -27,6 +27,11 @@ boolean stringComplete = false;
 // 创建HX711传感器对象
 DFRobot_HX711_I2C MyScale;
 
+// 添加测量模式标志
+bool isMeasuringMode = false;
+unsigned long lastWeightDisplayTime = 0;
+const long weightDisplayInterval = 200; // 每200ms更新一次重量显示
+
 void setup() {
   Serial.begin(9600);
   inputString.reserve(200);
@@ -59,6 +64,14 @@ void loop() {
   // 在真实模式下读取实际重量
   if (!isSimulationMode) {
     simulatedWeight = MyScale.readWeight();
+    
+    // 在测量模式下实时显示重量
+    if (isMeasuringMode && (millis() - lastWeightDisplayTime >= weightDisplayInterval)) {
+      lastWeightDisplayTime = millis();
+      Serial.print("当前重量: ");
+      Serial.print(simulatedWeight, 2);
+      Serial.println(" g");
+    }
   }
 
   // 根据当前药盒总重量(simulatedWeight)和当前药物的单片药重(weight_per_pill)计算数量
@@ -100,6 +113,7 @@ void processCommand(String command) {
   if (command.startsWith("SET_MODE:")) {
     int mode = command.substring(9).toInt();
     isSimulationMode = (mode == 1);
+    isMeasuringMode = false; // 切换模式时关闭测量模式
     Serial.print("Mode set to: "); Serial.println(isSimulationMode ? "Simulation" : "Real");
     // 模式改变时，PC端应重新同步活动药物的状态
     simulatedWeight = 0.0; 
@@ -135,6 +149,7 @@ void processCommand(String command) {
   } else if (command.startsWith("SELECT_MEDICATION:")) { // 设置Arduino当前操作的药物
     selectedMedication = command.substring(18);
     Serial.print("Arduino active medication context set to: "); Serial.println(selectedMedication);
+    // 重要: PC端在发送此命令后，应紧接着发送 SET_PILL_WEIGHT 和 (模拟模式下) SET_WEIGHT
   }
   // --- 模拟模式专属指令 ---
   else if (isSimulationMode && command.startsWith("SET_WEIGHT:")) { // 设置Arduino的模拟总重量
@@ -169,16 +184,27 @@ void processCommand(String command) {
   }
   // --- 真实模式下，获取当前重量作为单片药重 (针对当前选中的药物) ---
   else if (!isSimulationMode && command.startsWith("MEASURE_SINGLE_PILL_WEIGHT")) {
+      isMeasuringMode = true; // 进入测量模式
+      Serial.println("开始测量单片药重...");
+      Serial.println("请将一片药放入药盒，等待重量稳定后输入'CONFIRM_WEIGHT'确认当前重量");
+      Serial.println("或输入'CANCEL_MEASURE'取消测量");
+  }
+  // 添加确认重量命令
+  else if (!isSimulationMode && command.startsWith("CONFIRM_WEIGHT")) {
       float currentWeight = MyScale.readWeight();
       if (currentWeight > 0.0001 && selectedMedication != "N/A") {
           weight_per_pill = currentWeight;
-          Serial.print("Measured single pill weight for '"); Serial.print(selectedMedication); Serial.print("' as: "); Serial.println(weight_per_pill, 3);
-          Serial.println("PC should update its records for this WPP.");
-      } else if (selectedMedication == "N/A") {
-          Serial.println("Cannot measure single pill on Arduino: No medication selected.");
+          Serial.print("已确认单片药重为: "); Serial.print(weight_per_pill, 3); Serial.println(" g");
+          Serial.print("药物: "); Serial.println(selectedMedication);
+          isMeasuringMode = false; // 退出测量模式
       } else {
-          Serial.println("Cannot measure single pill on Arduino: current weight is too low or zero.");
+          Serial.println("当前重量无效或未选择药物，请重试");
       }
+  }
+  // 添加取消测量命令
+  else if (!isSimulationMode && command.startsWith("CANCEL_MEASURE")) {
+      isMeasuringMode = false;
+      Serial.println("已取消测量");
   }
 
   sendDataToPC(); // 发送更新后的状态到PC
@@ -194,4 +220,4 @@ void serialEvent() {
       inputString += inChar;
     }
   }
-} 
+}
