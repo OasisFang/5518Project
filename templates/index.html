@@ -560,6 +560,14 @@
                             <div id="medicationStep3" class="step-content" style="display:none;">
                                 <h6 class="step-label">步骤3: 锁定药格并记录服药量</h6>
                                 <p class="small-text mb-2">完成取药后，点击下方按钮锁定药格并自动记录服药量</p>
+                                <!-- 新增：测量减少重量并计算服用数量 -->
+                                <div class="mb-3 d-flex align-items-center">
+                                    <button id="measureConsumptionBtn" class="btn btn-outline-primary btn-sm me-2" onclick="measureConsumption()">测量减少重量</button>
+                                    <div>
+                                        <span>减少重量: <strong id="measuredWeightReduced">-</strong> g</span>
+                                        <span class="ms-3">服用数量: <strong id="measuredPillCount">-</strong> 片</span>
+                                    </div>
+                                </div>
                                 <div class="d-flex mb-3">
                                     <button id="lockAndRecordBtn" class="btn btn-success btn-sm" onclick="lockAndRecordConsumption()">完成服药并记录</button>
                                 </div>
@@ -568,8 +576,9 @@
                                 <div class="mt-4">
                                     <h6 class="section-title">传统服药方式</h6>
                                     <ul class="nav nav-pills mb-3 nav-fill" id="simConsumeModeTab" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="consume-manual-count-tab" data-bs-toggle="pill" data-bs-target="#consume-manual-count-pane" type="button" role="tab" aria-controls="consume-manual-count-pane" aria-selected="true" onclick="showTab('consume-manual-count-pane', this)">按数量服用</button>
+                                        <!-- 隐藏按数量服用选项 -->
+                                        <li class="nav-item" style="display:none;" role="presentation">
+                                            <button class="nav-link" id="consume-manual-count-tab" data-bs-toggle="pill" data-bs-target="#consume-manual-count-pane" type="button" role="tab" aria-controls="consume-manual-count-pane" aria-selected="false">按数量服用</button>
                                         </li>
                                         <li class="nav-item" role="presentation" id="consumeByWeightTabItem">
                                             <button class="nav-link" id="consume-sim-weight-tab" data-bs-toggle="pill" data-bs-target="#consume-sim-weight-pane" type="button" role="tab" aria-controls="consume-sim-weight-pane" aria-selected="false" onclick="showTab('consume-sim-weight-pane', this)">按重量减少 (模拟)</button>
@@ -577,12 +586,8 @@
                                     </ul>
                                     
                                     <div class="tab-content">
-                                        <div class="tab-pane fade show active" id="consume-manual-count-pane" role="tabpanel" aria-labelledby="consume-manual-count-tab">
-                                            <div class="input-group mb-3">
-                                                <input type="number" id="pillsToConsumeInput" class="form-control form-control-sm" placeholder="输入服用数量" min="1">
-                                                <button class="btn btn-success btn-sm" onclick="consumePillsForActiveMedPC()">确认服用 (按数量)</button>
-                                            </div>
-                                        </div>
+                                        <!-- 隐藏手动数量面板 -->
+                                        <div class="tab-pane fade" id="consume-manual-count-pane" role="tabpanel" aria-labelledby="consume-manual-count-tab" style="display:none;"></div>
                                         <div class="tab-pane fade" id="consume-sim-weight-pane" role="tabpanel" aria-labelledby="consume-sim-weight-tab">
                                             <div class="input-group mb-3">
                                                 <input type="number" step="0.01" id="weightToReduceInput" class="form-control form-control-sm" placeholder="输入减少的重量 (g)" min="0.01">
@@ -683,16 +688,18 @@
         if (consumptionLogEntries.length === 0 && consumptionLogDiv) { 
             consumptionLogDiv.innerHTML = ''; 
         }
-        const time = new Date().toLocaleTimeString();
+        // 使用完整日期时间并美化日志样式
+        const dateTime = new Date().toLocaleString();
         const entry = document.createElement('div');
-        entry.className = 'consumption-log-entry';
-        let logMessage = `[${time}] 服用 ${medName}: ${count} 片/粒。`;
+        entry.className = 'alert alert-info py-2';
+        // 构造日志内容
+        let html = `<strong>${dateTime}:</strong> 食用 <strong>${medName}</strong> ${count} 片`;
         if (weightReducedApprox !== null) {
-            logMessage += ` (约减少 ${parseFloat(weightReducedApprox).toFixed(2)}g)`;
+            html += `，约减少 ${parseFloat(weightReducedApprox).toFixed(2)}g`;
         }
-        entry.textContent = logMessage;
+        entry.innerHTML = html;
         if(consumptionLogDiv) consumptionLogDiv.insertBefore(entry, consumptionLogDiv.firstChild);
-        consumptionLogEntries.push(logMessage); 
+        consumptionLogEntries.push(html); 
     }
 
     function fetchStatus() {
@@ -930,17 +937,72 @@
             });
     }
 
+    /**
+     * 测量当前减少重量并估算服用数量
+     */
+    function measureConsumption() {
+        const startWeightEl = document.getElementById('sessionStartWeight');
+        let startWeight = 0;
+        if (startWeightEl) {
+            const txt = startWeightEl.textContent.replace(/g$/, '');
+            startWeight = parseFloat(txt) || 0;
+        }
+        // 获取 Arduino 缓存的当前重量，避免串口冲突导致超时
+        fetch('/get_current_weight')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success' && data.weight !== undefined) {
+                    const currentWeight = parseFloat(data.weight) || 0;
+                    const weightReduced = Math.max(0, startWeight - currentWeight);
+                    const weightReducedEl = document.getElementById('measuredWeightReduced');
+                    const pillCountEl = document.getElementById('measuredPillCount');
+                    if (weightReducedEl) weightReducedEl.textContent = weightReduced.toFixed(2);
+                    const details = pc_managed_medication_details[pcActiveMedicationNameGlobal] || {};
+                    const wpp = parseFloat(details.wpp) || 0;
+                    const pillCount = wpp > 0 ? Math.round(weightReduced / wpp) : 0;
+                    if (pillCountEl) pillCountEl.textContent = pillCount;
+                    addLog(`测量减少重量: ${weightReduced.toFixed(2)}g, 估算服用: ${pillCount} 片`, 'info');
+                } else {
+                    addLog('测量减少重量失败: 无效数据', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('测量减少重量失败:', error);
+                addLog('测量减少重量时出错', 'error');
+            });
+    }
+
     function lockAndRecordConsumption() {
-        addLog("正在锁定药格并记录服药量...", "info");
-        sendCommand('/lock_and_record_consumption', {}, 'POST', `完成服药并记录`)
+        // 在模拟模式下，直接使用模拟消费功能
+        if (currentIsSimulationGlobal) {
+            addLog("模拟模式下，使用按重量减少功能进行服药", "info");
+            consumePillsBySimulatedWeight();
+            return;
+        }
+        // 实时模式下，获取当前重量并锁定记录
+        addLog("获取当前重量以获取最新数据...", "info");
+        fetch('/get_current_weight')
+            .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // 更新会话状态
-                    updateSessionStatus(false, `服药会话已完成`);
-                    
-                    // 显示服药结果
-                    showMedicationResult(data.completed_session);
+                    addLog('重量获取成功', 'success');
+                } else {
+                    addLog(`重量获取失败: ${data.message || '未知错误'}`, 'error');
                 }
+            })
+            .catch(err => {
+                console.error('重量获取错误:', err);
+                addLog('获取重量请求出错', 'error');
+            })
+            .finally(() => {
+                addLog("正在锁定药格并记录服药量...", "info");
+                sendCommand('/lock_and_record_consumption', {}, 'POST', `完成服药并记录`)
+                    .then(data => {
+                        if (data.status === 'success') {
+                            updateSessionStatus(false, `服药会话已完成`);
+                            showMedicationResult(data.completed_session);
+                        }
+                    });
             });
     }
 
@@ -1018,6 +1080,8 @@
         if (resultEl) {
             resultEl.style.display = 'block';
         }
+        // 将本次服药记录添加到日志
+        addConsumptionLogEntry(sessionData.current_medication, sessionData.pills_consumed, sessionData.weight_consumed);
     }
 
     function resetMedicationUI() {
@@ -1343,32 +1407,23 @@
                     return;
                 }
                 
-                // 单独获取重量，而不是完整状态，减少负载
-                fetch('/force_refresh_weight', { method: 'POST' })
-                    .then(response => response.json())
+                // 使用缓存接口获取重量，避免串口冲突导致超时
+                fetch('/get_current_weight')
+                    .then(res => res.json())
                     .then(data => {
-                        window.weightUpdateErrorCount = 0; // 重置错误计数
-                        
-                        if (data.weight !== undefined) {
+                        if (data.status === 'success' && data.weight !== undefined) {
                             const realTimeWeightValue = document.getElementById('realTimeWeightValueInStep3');
                             if (realTimeWeightValue) {
                                 realTimeWeightValue.textContent = parseFloat(data.weight).toFixed(2);
                             }
+                            window.weightUpdateErrorCount = 0;
                         }
                     })
                     .catch(error => {
                         console.error("获取重量失败:", error);
-                        window.weightUpdateErrorCount++; // 增加错误计数
-                        
-                        // 尝试使用主状态数据中的重量
-                        if (arduinoRawStateGlobal.total_weight_in_box_arduino !== undefined) {
-                            const realTimeWeightValue = document.getElementById('realTimeWeightValue');
-                            if (realTimeWeightValue) {
-                                realTimeWeightValue.textContent = parseFloat(arduinoRawStateGlobal.total_weight_in_box_arduino).toFixed(2) + " (缓存)";
-                            }
-                        }
+                        window.weightUpdateErrorCount++;
                     });
-            }, 1000); // 增加到1秒一次
+            }, 2000); // 调整为2秒一次，减少请求频率
             
             // 存储interval ID以便后续清除
             window.currentWeightUpdateInterval = weightUpdateInterval;
@@ -1556,8 +1611,19 @@
         if (weightStr === "" || isNaN(parseFloat(weightStr)) || parseFloat(weightStr) <= 0) {
             addLog("请输入有效的减少重量 (正数)。", "error"); return;
         }
-        sendCommand('/consume_pills_by_weight_simulated', { weight_to_reduce: parseFloat(weightStr) }, 'POST', `按重量服用 '${pcActiveMedicationNameGlobal}'`)
-            .then(() => { if(inputEl) inputEl.value = ''; });
+        const weightValue = parseFloat(weightStr);
+        sendCommand('/consume_pills_by_weight_simulated', { weight_to_reduce: weightValue }, 'POST', `按重量服用 '${pcActiveMedicationNameGlobal}'`)
+            .then(data => {
+                if (inputEl) inputEl.value = '';
+                // 更新界面显示消费结果
+                const weightReducedEl = document.getElementById('measuredWeightReduced');
+                const pillCountEl = document.getElementById('measuredPillCount');
+                if (weightReducedEl) weightReducedEl.textContent = data.weight_reduced_approx.toFixed(2);
+                if (pillCountEl) pillCountEl.textContent = data.consumed_count;
+                addLog(`传统模拟消费完成: ${data.consumed_count} 片, 减少重量: ${data.weight_reduced_approx.toFixed(2)}g`, 'success');
+                // 刷新状态并更新 PC 表格
+                fetchStatus();
+            });
     }
     
     // --- PC Active Medication Selection ---
@@ -1699,11 +1765,11 @@
                 const medStageArduinoMedCountEl = document.getElementById('medStageArduinoMedCount');
                 if(medStageArduinoMedCountEl) medStageArduinoMedCountEl.textContent = arduinoRawStateGlobal.pill_count_arduino_current_med !== undefined ? parseInt(arduinoRawStateGlobal.pill_count_arduino_current_med) : '0';
                 
+                // 在服药阶段始终显示药物管理流程，隐藏未选药物提示
                 const medicationStageActiveMedControlsEl = document.getElementById('medicationStageActiveMedControls');
-                if(medicationStageActiveMedControlsEl) medicationStageActiveMedControlsEl.style.display = pcActiveMedicationNameGlobal ? 'block' : 'none';
-                
+                if (medicationStageActiveMedControlsEl) medicationStageActiveMedControlsEl.style.display = 'block';
                 const medicationStageNoActiveMedInfoEl = document.getElementById('medicationStageNoActiveMedInfo');
-                if(medicationStageNoActiveMedInfoEl) medicationStageNoActiveMedInfoEl.style.display = !pcActiveMedicationNameGlobal ? 'block' : 'none';
+                if (medicationStageNoActiveMedInfoEl) medicationStageNoActiveMedInfoEl.style.display = 'none';
                 
                 const consumeByWeightTabItemEl = document.getElementById('consumeByWeightTabItem');
                 if(consumeByWeightTabItemEl) consumeByWeightTabItemEl.style.display = currentIsSimulationGlobal ? 'block' : 'none';

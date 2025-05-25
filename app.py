@@ -376,8 +376,19 @@ def set_wpp_for_active_med_pc_and_arduino_api():
 
 @app.route('/measure_single_pill_real_mode_for_active_med', methods=['POST'])
 def measure_single_pill_real_api():
-    # 暂时禁用单片测量功能，避免缩进错误影响应用启动
-    return jsonify({"status": "error", "message": "Measure single pill disabled"}), 501
+    """触发 Arduino 执行单片药重测量，并让前端后续轮询状态更新 WPP 值"""
+    global pc_active_medication_name
+    # 确保已选药物
+    if not pc_active_medication_name:
+        return jsonify({"status": "error", "message": "请先选择要测量的药物。"}), 400
+    # 校验模式
+    if current_mode_is_simulation:
+        return jsonify({"status": "error", "message": "当前处于模拟模式，请切换到真实模式后再测量。"}), 400
+    # 发送测量命令到 Arduino
+    if not send_to_arduino_command("MEASURE_SINGLE_PILL_WEIGHT"):
+        return jsonify({"status": "error", "message": "无法发送测量命令到 Arduino"}), 500
+    # 命令已发送，前端将通过轮询状态检测并更新 WPP
+    return jsonify({"status": "success", "message": "测量命令已发送，请等待结果。"}), 200
 
 @app.route('/consume_pills_for_active_med', methods=['POST'])
 def consume_pills_pc_api():
