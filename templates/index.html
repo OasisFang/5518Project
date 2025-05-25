@@ -396,7 +396,7 @@
                                 <div class="card mb-3" id="realTimeWeightCard">
                                     <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">当前药盒实时重量</h6>
-                                        <button type="button" class="btn btn-sm btn-light" id="refreshWeightBtn" onclick="forceRefreshWeight()">
+                                        <button type="button" class="btn btn-sm btn-light" id="refreshWeightBtnStep5" onclick="refreshWeightStep5()">
                                             <i class="fas fa-sync-alt"></i> 刷新重量
                                         </button>
                                     </div>
@@ -2392,18 +2392,47 @@
 
     // 每次切换到步骤5时，自动开始重量监测
     function startStep5WeightMonitoring() {
-        // 先请求一次重量数据
-        forceRefreshWeight();
-        
         // 停止之前可能存在的定时器
         if (window.step5WeightInterval) {
             clearInterval(window.step5WeightInterval);
         }
-        
-        // 定时调用强制刷新接口更新重量，间隔延长到2000ms
-        window.step5WeightInterval = setInterval(() => {
-            forceRefreshWeight();
-        }, 2000);
+        // 立即刷新一次
+        refreshWeightStep5();
+        // 周期刷新
+        window.step5WeightInterval = setInterval(refreshWeightStep5, 2000);
+    }
+
+    // 新增：仅使用缓存接口刷新步骤5重量
+    function refreshWeightStep5() {
+      fetch('/get_current_weight')
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === 'success') {
+            const w = parseFloat(data.weight);
+            const wEl = document.getElementById('currentWeightDisplayInStep5');
+            if (wEl) wEl.textContent = w.toFixed(3);
+            // 更新药片计数
+            const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
+            if (details && details.wpp > 0.001) {
+              const count = Math.round(w / details.wpp);
+              const countEl = document.getElementById('pillCountDisplayInStep5');
+              if (countEl) countEl.textContent = count;
+              // 更新进度条
+              const pct = Math.min(100, Math.round((count / 100) * 100));
+              const bar = document.getElementById('pillCountProgressBarInStep5');
+              if (bar) { bar.style.width = pct + '%'; bar.setAttribute('aria-valuenow', pct); }
+            }
+          }
+        }).catch(err => console.error('读取当前重量失败:', err));
+    }
+
+    // 修改自动刷新逻辑
+    function startStep5WeightMonitoring() {
+      if (window.step5WeightInterval) clearInterval(window.step5WeightInterval);
+      // 立即刷新一次
+      refreshWeightStep5();
+      // 周期刷新
+      window.step5WeightInterval = setInterval(refreshWeightStep5, 2000);
     }
 
     // 修改moveToWppStep函数，添加对步骤5的特殊处理
