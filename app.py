@@ -666,7 +666,7 @@ def get_current_weight():
 def force_refresh_weight():
     """强制获取最新重量数据，用于药物库存设置步骤"""
     try:
-        # 解析可选的 JSON 参数
+        # 解析 JSON safely
         data = request.get_json(silent=True) or {}
         # 如果是真实模式且串口未连接，尝试重连
         if not current_mode_is_simulation and (ser is None or not ser.is_open):

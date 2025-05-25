@@ -2350,7 +2350,8 @@
             return;
         }
         
-        const currentWeight = parseFloat($("#currentWeightDisplayInStep5").text());
+        const currentWeightEl = document.getElementById('currentWeightDisplayInStep5');
+        const currentWeight = currentWeightEl ? parseFloat(currentWeightEl.textContent) : 0;
         const wpp = pc_managed_medication_details[pcActiveMedicationNameGlobal].wpp;
         
         if (wpp <= 0.001) {
@@ -2359,8 +2360,8 @@
         }
         
         const pillCount = Math.round(currentWeight / wpp);
-        
-        $("#confirmWeightBtnInStep5").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 处理中');
+        const confirmBtn = document.getElementById('confirmWeightBtnInStep5');
+        if (confirmBtn) { confirmBtn.disabled = true; confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 处理中'; }
         
         // 使用已有的API更新状态
         fetch('/update_state_from_manual_count_for_active_med', {
@@ -2385,7 +2386,7 @@
             addLog("无法连接到服务器", "error");
         })
         .finally(() => {
-            $("#confirmWeightBtnInStep5").prop("disabled", false).html('确认重量和药片数量');
+            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = '确认重量和药片数量'; }
         });
     }
 
@@ -2399,7 +2400,7 @@
             clearInterval(window.step5WeightInterval);
         }
         
-        // 定时调用强制刷新接口更新重量
+        // 定时调用强制刷新接口更新重量，间隔延长到2000ms
         window.step5WeightInterval = setInterval(() => {
             forceRefreshWeight();
         }, 2000);
