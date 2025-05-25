@@ -54,7 +54,7 @@ void setup() {
   
   // 去皮，执行多次以确保稳定
   for (int i = 0; i < 3; i++) {
-    MyScale.peel();
+  MyScale.peel();
     delay(100);
   }
   
@@ -326,11 +326,13 @@ void processCommand(const char* command) {
     float currentWeight = 0.0;
     if (isSimulationMode) {
       currentWeight = simulatedWeight;
+      Serial.print(F("WEIGHT:"));
+      Serial.println(currentWeight, 3);
     } else {
       // 进行多次读取并取平均值，提高稳定性
       float sum = 0.0;
       int validReadings = 0;
-      for (int i = 0; i < 3; i++) {
+      for (int i = 0; i < 5; i++) {  // 增加采样次数
         float reading = MyScale.readWeight();
         if (reading >= 0 && reading < 1000) { // 合理范围内的值
           sum += reading;
@@ -341,13 +343,15 @@ void processCommand(const char* command) {
       
       if (validReadings > 0) {
         currentWeight = sum / validReadings;
+        // 确保立即发送响应
+        Serial.print(F("WEIGHT:"));
+        Serial.println(currentWeight, 3);
       } else {
-        currentWeight = simulatedWeight; // 如果所有读数都无效，使用当前值
+        // 如果没有有效读数，返回0
+        Serial.println(F("WEIGHT:0.000"));
+        Serial.println(F("Error: No valid weight readings"));
       }
     }
-    
-    Serial.print(F("WEIGHT:"));
-    Serial.println(currentWeight, 3);
   }
 
   sendDataToPC(); // 发送更新后的状态到PC

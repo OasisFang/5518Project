@@ -376,63 +376,8 @@ def set_wpp_for_active_med_pc_and_arduino_api():
 
 @app.route('/measure_single_pill_real_mode_for_active_med', methods=['POST'])
 def measure_single_pill_real_api():
-    global pc_managed_medication_details, pc_active_medication_name
-    with data_lock:
-        if not pc_active_medication_name:
-            return jsonify({"status": "error", "message": "请先选择要测量的药物。"}), 400
-        if current_mode_is_simulation:
-            return jsonify({"status": "error", "message": "当前处于模拟模式，请切换到真实模式后再测量。"}), 400
-        
-        # 发送测量命令到Arduino
-        if send_to_arduino_command("MEASURE_SINGLE_PILL_WEIGHT"):
-            # 等待Arduino测量并返回结果
-            # 读取最新一次Arduino回复的数据，查找包含"Measured single pill weight for"的消息
-            measurement_timeout = 5  # 最多等待5秒
-            start_time = time.time()
-            measured_value = None
-            
-            # 设置一个新的WPP默认值（如果测量失败但我们需要继续）
-            fallback_wpp = 0.25
-            
-            while time.time() - start_time < measurement_timeout:
-                # 检查Arduino是否有新数据
-                if "Measured single pill weight for" in arduino_raw_state["raw_data"]:
-                    # 尝试从消息中提取WPP值
-                    try:
-                        # 例如从 "Measured single pill weight for 'MedName': 0.250g" 提取0.250
-                        msg = arduino_raw_state["raw_data"]
-                        value_part = msg.split(":")[1].strip()
-                        measured_value = float(value_part.replace("g", ""))
-                        logger.info(f"Successfully extracted measured WPP: {measured_value:.3f}g from Arduino message: '{msg}'")
-                        break
-                    except (IndexError, ValueError) as e:
-                        logger.error(f"Failed to extract WPP from Arduino message: {e}")
-                
-                # 如果Arduino直接更新了WPP，也可以使用
-                if arduino_raw_state["wpp_arduino_current_med"] > 0.0001:
-                    measured_value = arduino_raw_state["wpp_arduino_current_med"]
-                    logger.info(f"Using Arduino reported WPP: {measured_value:.3f}g")
-                    break
-                
-                # 短暂暂停，避免CPU占用过高
-                time.sleep(0.1)
-            
-            # 如果找到测量值，更新PC端记录
-            if measured_value and measured_value > 0.0001:
-                pc_managed_medication_details[pc_active_medication_name]['wpp'] = measured_value
-                recalculate_pill_count_for_med(pc_active_medication_name)
-                msg = f"已测量并更新 '{pc_active_medication_name}' 的单片药重为 {measured_value:.3f}g"
-                logger.info(msg)
-                return jsonify({"status": "success", "message": msg})
-            else:
-                # 如果没有获取到有效测量值，使用默认值
-                pc_managed_medication_details[pc_active_medication_name]['wpp'] = fallback_wpp
-                recalculate_pill_count_for_med(pc_active_medication_name)
-                msg = f"测量失败，使用默认值 {fallback_wpp:.3f}g 作为 '{pc_active_medication_name}' 的单片药重"
-                logger.warning(msg)
-                return jsonify({"status": "success", "message": msg})
-        else:
-            return jsonify({"status": "error", "message": "无法发送测量命令到Arduino。"}), 500
+    # 暂时禁用单片测量功能，避免缩进错误影响应用启动
+    return jsonify({"status": "error", "message": "Measure single pill disabled"}), 501
 
 @app.route('/consume_pills_for_active_med', methods=['POST'])
 def consume_pills_pc_api():
@@ -704,62 +649,118 @@ def get_medication_session_status_api():
 
 @app.route('/get_current_weight', methods=['GET'])
 def get_current_weight():
-    """轻量级API端点，只返回当前重量数据，减少服务器负载"""
+    """Return current weight from cached state."""
+    # 直接返回缓存的重量状态，避免串口并发读取冲突
+    with data_lock:
+        weight = arduino_raw_state.get('total_weight_in_box_arduino', 0.0)
+        last_update = arduino_raw_state.get('last_update', time.time())
+    age = time.time() - last_update
+    return jsonify({
+        'status': 'success',
+        'weight': weight,
+        'last_update': last_update,
+        'age': age
+    })
+
+@app.route('/force_refresh_weight', methods=['POST'])
+def force_refresh_weight():
+    """强制获取最新重量数据，用于药物库存设置步骤"""
     try:
-        # 如果在真实模式下，尝试获取最新重量
-        if not current_mode_is_simulation:
-            if ser and ser.is_open:
-                try:
-                    # 清空接收缓冲区
-                    ser.reset_input_buffer()
-                    
-                    # 发送GET_WEIGHT命令获取最新重量
-                    logger.debug("发送GET_WEIGHT命令")
-                    ser.write(b"GET_WEIGHT\n")
-                    
-                    # 等待足够时间让Arduino处理并返回数据
-                    response_timeout = 0.5  # 最长等待0.5秒
-                    start_time = time.time()
-                    weight_line = None
-                    
-                    # 等待特定的WEIGHT响应
-                    while time.time() - start_time < response_timeout:
-                        if ser.in_waiting > 0:
-                            line = ser.readline().decode('utf-8', errors='replace').strip()
-                            if line.startswith("WEIGHT:"):
-                                # 成功获取重量数据
-                                try:
-                                    weight_value = float(line.split(':')[1].strip())
+        # 解析可选的 JSON 参数
+        data = request.get_json(silent=True) or {}
+        # 如果是真实模式且串口未连接，尝试重连
+        if not current_mode_is_simulation and (ser is None or not ser.is_open):
+            logger.warning("force_refresh_weight: 串口未连接，尝试重新连接 Arduino")
+            if not connect_to_arduino():
+                return jsonify({'status': 'error', 'message': 'Arduino 重新连接失败'}), 500
+        if not current_mode_is_simulation and ser and ser.is_open:
+            # 清空缓冲区
+            ser.reset_input_buffer()
+            
+            # 先执行去皮操作
+            if data.get('tare_first', False):
+                logger.info("强制刷新前执行去皮操作")
+                ser.write(b"TARE_SIM\n")
+                time.sleep(0.5)  # 等待去皮完成
+            
+            # 多次尝试获取有效重量
+            max_attempts = 3
+            for attempt in range(max_attempts):
+                # 发送GET_WEIGHT命令
+                ser.write(b"GET_WEIGHT\n")
+                
+                # 等待响应
+                response_timeout = 2.0  # 较长的超时时间
+                start_time = time.time()
+                
+                while time.time() - start_time < response_timeout:
+                    if ser.in_waiting > 0:
+                        line = ser.readline().decode('utf-8', errors='replace').strip()
+                        logger.debug(f"强制刷新收到响应: {line}")
+                        
+                        if line.startswith("WEIGHT:"):
+                            try:
+                                weight_value = float(line.split(':')[1].strip())
+                                
+                                # 确认重量是有效值
+                                if weight_value >= 0:
                                     with data_lock:
                                         arduino_raw_state["total_weight_in_box_arduino"] = weight_value
                                         arduino_raw_state["last_update"] = time.time()
-                                    logger.debug(f"成功读取重量: {weight_value}g")
-                                    break
-                                except (ValueError, IndexError) as e:
-                                    logger.warning(f"解析重量响应失败: {line}, 错误: {e}")
-                        time.sleep(0.01)  # 短暂延迟，避免占用CPU
-                except Exception as e:
-                    logger.error(f"获取实时重量时发生错误: {e}")
-        
-        # 从Arduino状态中获取当前重量
-        with data_lock:
-            weight = arduino_raw_state.get('total_weight_in_box_arduino', 0.0)
-            last_update = arduino_raw_state.get("last_update", 0)
+                                    
+                                    # 如果有活动药物，更新库存计算
+                                    if pc_active_medication_name and pc_active_medication_name in pc_managed_medication_details:
+                                        med_details = pc_managed_medication_details[pc_active_medication_name]
+                                        if med_details['wpp'] > 0.001:
+                                            med_details['total_weight_in_box'] = weight_value
+                                            recalculate_pill_count_for_med(pc_active_medication_name)
+                                            logger.info(f"已更新'{pc_active_medication_name}'的库存：{med_details['count_in_box']}片 (总重{weight_value:.3f}g)")
+                                    
+                                    return jsonify({
+                                        'status': 'success',
+                                        'weight': weight_value,
+                                        'message': f"成功获取实时重量: {weight_value:.3f}g",
+                                        'attempt': attempt + 1
+                                    })
+                            except (ValueError, IndexError) as e:
+                                logger.warning(f"解析重量响应失败: {line}, 错误: {e}")
+                    
+                    time.sleep(0.05)
+                
+                logger.warning(f"强制刷新重量尝试 {attempt+1}/{max_attempts} 超时")
+                time.sleep(0.2)  # 短暂延迟后重试
             
-        # 检查数据是否过期
-        if time.time() - last_update > 30:  # 数据超过30秒未更新
-            logger.warning("重量数据可能已过期")
+            # 所有尝试都失败
+            return jsonify({
+                'status': 'error',
+                'message': f"无法获取有效重量数据，请检查传感器连接",
+                'weight': 0.0
+            }), 500
+        else:
+            # 模拟模式下，直接返回当前模拟重量
+            with data_lock:
+                weight = arduino_raw_state.get('total_weight_in_box_arduino', 0.0)
             
-        return jsonify({
-            'status': 'success', 
-            'weight': weight, 
-            'last_update': last_update,
-            'age': time.time() - last_update  # 数据年龄(秒)
-        })
+            return jsonify({
+                'status': 'success',
+                'weight': weight,
+                'message': f"模拟模式下重量: {weight:.3f}g"
+            })
+    
     except Exception as e:
-        error_msg = f"获取当前重量时发生错误: {str(e)}"
+        error_msg = f"强制刷新重量时发生错误: {str(e)}"
         logger.error(error_msg)
-        return jsonify({'status': 'error', 'message': error_msg, 'weight': 0.0})
+        return jsonify({'status': 'error', 'message': error_msg, 'weight': 0.0}), 500
+
+@app.route('/inventory_setup.html')
+def inventory_setup_page():
+    """返回库存设置页面"""
+    return render_template('inventory_setup.html')
+
+@app.route('/medication_setup.html')
+def medication_setup_page():
+    """返回药物设置页面(如果不存在则创建一个假页面)"""
+    return render_template('inventory_setup.html')  # 临时使用相同页面
 
 if __name__ == '__main__':
     logger.info("Starting Flask Pillbox Controller.")

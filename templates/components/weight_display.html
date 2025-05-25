@@ -1,0 +1,302 @@
+<!-- 实时重量显示组件 -->
+<div class="card mb-3" id="weightDisplayCard">
+  <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+    <h5 class="mb-0">当前药盒重量</h5>
+    <button type="button" class="btn btn-sm btn-light" id="refreshWeightBtn">
+      <i class="fas fa-sync-alt"></i> 强制刷新
+    </button>
+  </div>
+  <div class="card-body">
+    <div class="text-center mb-3">
+      <h2 id="currentWeightDisplay">0.000</h2>
+      <p class="text-muted mb-0">克 (g)</p>
+      <small id="weightUpdateStatus" class="text-muted">等待数据...</small>
+    </div>
+    
+    <div class="mt-3">
+      <h5>药片计算</h5>
+      <div class="d-flex justify-content-between">
+        <span>单片重量:</span>
+        <span id="wppDisplay">0.000 g</span>
+      </div>
+      <div class="d-flex justify-content-between">
+        <span>估计药片数:</span>
+        <span id="pillCountDisplay">0</span>
+      </div>
+      <div class="progress mt-2">
+        <div id="pillCountProgressBar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+      </div>
+    </div>
+    
+    <div class="d-grid gap-2 mt-3">
+      <button type="button" class="btn btn-success" id="confirmWeightBtn">
+        确认重量和药片数量
+      </button>
+      <button type="button" class="btn btn-outline-secondary" id="tareWeightBtn">
+        <i class="fas fa-balance-scale"></i> 重新去皮/校准
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 实时重量显示组件的JavaScript -->
+<script>
+  $(document).ready(function() {
+    let weightRefreshInterval;
+    let lastWeight = 0;
+    let weightStabilityCounter = 0;
+    const requiredStableReadings = 3; // 需要连续几次读数稳定才确认
+    
+    // 初始化组件
+    function initWeightDisplay() {
+      updateWppDisplay();
+      startWeightRefresh();
+      
+      // 绑定按钮事件
+      $("#refreshWeightBtn").click(forceRefreshWeight);
+      $("#tareWeightBtn").click(tareWeight);
+      $("#confirmWeightBtn").click(confirmWeightAndCount);
+    }
+    
+    // 启动定时刷新
+    function startWeightRefresh() {
+      // 先立即刷新一次
+      refreshWeight();
+      
+      // 然后设置定时刷新
+      weightRefreshInterval = setInterval(refreshWeight, 1000);
+    }
+    
+    // 停止定时刷新
+    function stopWeightRefresh() {
+      if (weightRefreshInterval) {
+        clearInterval(weightRefreshInterval);
+      }
+    }
+    
+    // 普通刷新重量
+    function refreshWeight() {
+      if (window.pillboxApp.isRealMode) {
+        forceRefreshWeight();
+        return;
+      }
+      $.get("/get_current_weight")
+        .done(function(data) {
+          if (data.status === "success") {
+            updateWeightDisplay(data.weight, data.age);
+            checkWeightStability(data.weight);
+          } else {
+            showWeightError(data.message || "获取重量失败");
+          }
+        })
+        .fail(function() {
+          showWeightError("无法连接到服务器");
+        });
+    }
+    
+    // 强制刷新重量（使用新API）
+    function forceRefreshWeight() {
+      $("#refreshWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 刷新中');
+      $("#weightUpdateStatus").text("正在强制刷新...");
+      
+      $.post("/force_refresh_weight")
+        .done(function(data) {
+          if (data.status === "success") {
+            updateWeightDisplay(data.weight, 0);
+            showWeightSuccess(data.message || "刷新成功");
+            // 重置稳定计数器
+            weightStabilityCounter = 0;
+            lastWeight = data.weight;
+          } else {
+            showWeightError(data.message || "刷新失败");
+          }
+        })
+        .fail(function(xhr) {
+          let errorMsg = "强制刷新失败";
+          if (xhr.responseJSON && xhr.responseJSON.message) {
+            errorMsg = xhr.responseJSON.message;
+          }
+          showWeightError(errorMsg);
+        })
+        .always(function() {
+          $("#refreshWeightBtn").prop("disabled", false).html('<i class="fas fa-sync-alt"></i> 强制刷新');
+        });
+    }
+    
+    // 去皮/校准
+    function tareWeight() {
+      $("#tareWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 校准中');
+      
+      $.post("/tare_arduino_sim_only")
+        .done(function(data) {
+          showWeightSuccess("去皮成功，传感器已校准为0");
+          // 延迟后强制刷新一次
+          setTimeout(forceRefreshWeight, 500);
+        })
+        .fail(function() {
+          showWeightError("去皮失败，请重试");
+        })
+        .always(function() {
+          setTimeout(function() {
+            $("#tareWeightBtn").prop("disabled", false).html('<i class="fas fa-balance-scale"></i> 重新去皮/校准');
+          }, 1000);
+        });
+    }
+    
+    // 确认当前重量和药片数
+    function confirmWeightAndCount() {
+      const activeMed = window.pillboxApp.getActiveMedication();
+      if (!activeMed) {
+        showWeightError("请先选择药物");
+        return;
+      }
+      
+      const currentWeight = parseFloat($("#currentWeightDisplay").text());
+      const wpp = window.pillboxApp.getMedicationWpp(activeMed);
+      
+      if (wpp <= 0.001) {
+        showWeightError("所选药物的单片重量无效，请先设置WPP");
+        return;
+      }
+      
+      const pillCount = Math.round(currentWeight / wpp);
+      
+      $("#confirmWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 处理中');
+      
+      // 使用已有的API更新状态
+      $.ajax({
+        url: "/update_state_from_manual_count_for_active_med",
+        method: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ count: pillCount }),
+        success: function(data) {
+          if (data.status === "success") {
+            showWeightSuccess(`已确认库存: ${pillCount}片 (${currentWeight.toFixed(3)}g)`);
+            // 通知主应用更新状态
+            if (typeof window.pillboxApp.onInventorySet === "function") {
+              window.pillboxApp.onInventorySet(activeMed, pillCount, currentWeight);
+            }
+          } else {
+            showWeightError(data.message || "设置库存失败");
+          }
+        },
+        error: function() {
+          showWeightError("无法连接到服务器");
+        },
+        complete: function() {
+          $("#confirmWeightBtn").prop("disabled", false).html('确认重量和药片数量');
+        }
+      });
+    }
+    
+    // 更新重量显示
+    function updateWeightDisplay(weight, age) {
+      // 更新显示
+      $("#currentWeightDisplay").text(weight.toFixed(3));
+      
+      // 更新状态信息
+      if (age < 1) {
+        $("#weightUpdateStatus").text("实时数据").removeClass("text-danger").addClass("text-success");
+      } else if (age < 5) {
+        $("#weightUpdateStatus").text(`${Math.round(age)}秒前更新`).removeClass("text-danger text-success");
+      } else {
+        $("#weightUpdateStatus").text(`${Math.round(age)}秒前更新 - 数据可能已过期`).addClass("text-danger").removeClass("text-success");
+      }
+      
+      // 更新药片计数
+      updatePillCountDisplay(weight);
+    }
+    
+    // 更新单片重量显示
+    function updateWppDisplay() {
+      const activeMed = window.pillboxApp.getActiveMedication();
+      if (activeMed) {
+        const wpp = window.pillboxApp.getMedicationWpp(activeMed);
+        $("#wppDisplay").text(`${wpp.toFixed(3)} g`);
+      } else {
+        $("#wppDisplay").text("未设置");
+      }
+    }
+    
+    // 更新药片计数显示
+    function updatePillCountDisplay(weight) {
+      const activeMed = window.pillboxApp.getActiveMedication();
+      if (activeMed) {
+        const wpp = window.pillboxApp.getMedicationWpp(activeMed);
+        if (wpp > 0.001) {
+          const pillCount = Math.round(weight / wpp);
+          $("#pillCountDisplay").text(pillCount);
+          
+          // 更新进度条 (假设最大为100片)
+          const percentage = Math.min(100, Math.round((pillCount / 100) * 100));
+          $("#pillCountProgressBar").css("width", `${percentage}%`).attr("aria-valuenow", percentage);
+          
+          // 根据数量设置进度条颜色
+          if (pillCount > 50) {
+            $("#pillCountProgressBar").removeClass("bg-warning bg-danger").addClass("bg-success");
+          } else if (pillCount > 20) {
+            $("#pillCountProgressBar").removeClass("bg-success bg-danger").addClass("bg-warning");
+          } else {
+            $("#pillCountProgressBar").removeClass("bg-success bg-warning").addClass("bg-danger");
+          }
+        } else {
+          $("#pillCountDisplay").text("无法计算 (WPP无效)");
+          $("#pillCountProgressBar").css("width", "0%").attr("aria-valuenow", 0);
+        }
+      } else {
+        $("#pillCountDisplay").text("请先选择药物");
+        $("#pillCountProgressBar").css("width", "0%").attr("aria-valuenow", 0);
+      }
+    }
+    
+    // 检查重量稳定性
+    function checkWeightStability(currentWeight) {
+      const difference = Math.abs(currentWeight - lastWeight);
+      
+      if (difference < 0.02) { // 如果变化小于0.02g，认为稳定
+        weightStabilityCounter++;
+        if (weightStabilityCounter >= requiredStableReadings) {
+          // 重量已经稳定，可以提示用户确认
+          $("#confirmWeightBtn").removeClass("btn-outline-success").addClass("btn-success").prop("disabled", false);
+          if (currentWeight > 0.1) { // 只有重量有意义时才提示
+            showWeightSuccess("重量已稳定，可以确认");
+          }
+        }
+      } else {
+        // 重量变化太大，重置计数器
+        weightStabilityCounter = 0;
+        $("#confirmWeightBtn").removeClass("btn-success").addClass("btn-outline-success");
+      }
+      
+      lastWeight = currentWeight;
+    }
+    
+    // 显示错误信息
+    function showWeightError(message) {
+      $("#weightUpdateStatus").text(message).addClass("text-danger").removeClass("text-success");
+    }
+    
+    // 显示成功信息
+    function showWeightSuccess(message) {
+      $("#weightUpdateStatus").text(message).addClass("text-success").removeClass("text-danger");
+    }
+    
+    // 导出组件公共方法
+    window.weightDisplayComponent = {
+      init: initWeightDisplay,
+      refreshWeight: refreshWeight,
+      forceRefresh: forceRefreshWeight,
+      startRefresh: startWeightRefresh,
+      stopRefresh: stopWeightRefresh,
+      updateWppDisplay: updateWppDisplay
+    };
+    
+    // 如果全局应用已就绪，立即初始化
+    if (window.pillboxApp && window.pillboxApp.isReady) {
+      initWeightDisplay();
+    } else {
+      // 否则等待全局应用就绪事件
+      $(document).on("pillboxAppReady", initWeightDisplay);
+    }
+  });
+</script> 

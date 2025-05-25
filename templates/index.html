@@ -392,6 +392,47 @@
                                 <h6 class="step-label">步骤5: 设置药物库存</h6>
                                 <p class="small-text mb-2">为 '<span class="current-active-med-name-wpp text-primary"></span>' 设置药盒内数量/总重</p>
                                 
+                                <!-- 实时重量显示卡片 -->
+                                <div class="card mb-3" id="realTimeWeightCard">
+                                    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">当前药盒实时重量</h6>
+                                        <button type="button" class="btn btn-sm btn-light" id="refreshWeightBtn" onclick="forceRefreshWeight()">
+                                            <i class="fas fa-sync-alt"></i> 刷新重量
+                                        </button>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="text-center mb-3">
+                                            <h3 id="currentWeightDisplayInStep5">0.000</h3>
+                                            <p class="text-muted mb-0">克 (g)</p>
+                                            <small id="weightUpdateStatusInStep5" class="text-muted">等待数据...</small>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <h6>药片计算</h6>
+                                            <div class="d-flex justify-content-between">
+                                                <span>单片重量:</span>
+                                                <span id="wppDisplayInStep5">0.000 g</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between">
+                                                <span>估计药片数:</span>
+                                                <span id="pillCountDisplayInStep5">0</span>
+                                            </div>
+                                            <div class="progress mt-2">
+                                                <div id="pillCountProgressBarInStep5" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-grid gap-2 mt-3">
+                                            <button type="button" class="btn btn-success" id="confirmWeightBtnInStep5" onclick="confirmWeightAndSetInventory()">
+                                                确认重量和药片数量
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" id="tareWeightBtnInStep5" onclick="tareArduinoForMeasurement()">
+                                                <i class="fas fa-balance-scale"></i> 去皮/校准
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                
                                 <div id="weighingSimModeOnlyControls"> 
                                     <ul class="nav nav-pills mb-3 nav-fill" id="simInventoryUpdateModeTab" role="tablist">
                                         <li class="nav-item" role="presentation">
@@ -1303,7 +1344,7 @@
                 }
                 
                 // 单独获取重量，而不是完整状态，减少负载
-                fetch('/get_current_weight')
+                fetch('/force_refresh_weight', { method: 'POST' })
                     .then(response => response.json())
                     .then(data => {
                         window.weightUpdateErrorCount = 0; // 重置错误计数
@@ -2265,6 +2306,148 @@
             }
         }
     }
+
+    // 添加到index.html的JS代码部分，放在script部分最后
+    function forceRefreshWeight() {
+        const refreshBtn = document.getElementById('refreshWeightBtn');
+        const statusEl = document.getElementById('weightUpdateStatusInStep5');
+        const weightEl = document.getElementById('currentWeightDisplayInStep5');
+        if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中'; }
+        if (statusEl) { statusEl.textContent = '正在强制刷新...'; statusEl.classList.remove('text-success','text-danger'); }
+        
+        fetch('/force_refresh_weight', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                const weight = parseFloat(data.weight);
+                if (weightEl) weightEl.textContent = weight.toFixed(3);
+                if (statusEl) { statusEl.textContent = '刷新成功: ' + (data.message || ''); statusEl.classList.add('text-success'); statusEl.classList.remove('text-danger'); }
+            } else {
+                if (statusEl) { statusEl.textContent = '刷新失败: ' + (data.message || '未知错误'); statusEl.classList.add('text-danger'); statusEl.classList.remove('text-success'); }
+            }
+        })
+        .catch(error => {
+            console.error("获取重量失败:", error);
+            if (statusEl) { statusEl.textContent = '获取重量失败，请重试'; statusEl.classList.add('text-danger'); statusEl.classList.remove('text-success'); }
+        })
+        .finally(() => {
+            if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 刷新重量'; }
+        });
+    }
+
+    function updateStep5WeightDisplay(weight) {
+        const el = document.getElementById('currentWeightDisplayInStep5');
+        if (el) el.textContent = weight.toFixed(3);
+    }
+
+    function confirmWeightAndSetInventory() {
+        if (!pcActiveMedicationNameGlobal) {
+            addLog("请先选择药物", "error");
+            return;
+        }
+        
+        const currentWeight = parseFloat($("#currentWeightDisplayInStep5").text());
+        const wpp = pc_managed_medication_details[pcActiveMedicationNameGlobal].wpp;
+        
+        if (wpp <= 0.001) {
+            addLog("所选药物的单片重量无效，请先设置WPP", "error");
+            return;
+        }
+        
+        const pillCount = Math.round(currentWeight / wpp);
+        
+        $("#confirmWeightBtnInStep5").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 处理中');
+        
+        // 使用已有的API更新状态
+        fetch('/update_state_from_manual_count_for_active_med', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ count: pillCount })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === "success") {
+                addLog(`已确认库存: ${pillCount}片 (${currentWeight.toFixed(3)}g)`, "success");
+                // 进入下一步
+                moveToWppStep(6);
+            } else {
+                addLog(data.message || "设置库存失败", "error");
+            }
+        })
+        .catch(error => {
+            console.error("设置库存失败:", error);
+            addLog("无法连接到服务器", "error");
+        })
+        .finally(() => {
+            $("#confirmWeightBtnInStep5").prop("disabled", false).html('确认重量和药片数量');
+        });
+    }
+
+    // 每次切换到步骤5时，自动开始重量监测
+    function startStep5WeightMonitoring() {
+        // 先请求一次重量数据
+        forceRefreshWeight();
+        
+        // 停止之前可能存在的定时器
+        if (window.step5WeightInterval) {
+            clearInterval(window.step5WeightInterval);
+        }
+        
+        // 定时调用强制刷新接口更新重量
+        window.step5WeightInterval = setInterval(() => {
+            forceRefreshWeight();
+        }, 2000);
+    }
+
+    // 修改moveToWppStep函数，添加对步骤5的特殊处理
+    const originalMoveToWppStep = window.moveToWppStep;
+    window.moveToWppStep = function(stepNumber, mode) {
+        // 先调用原始函数
+        originalMoveToWppStep(stepNumber, mode);
+        
+        // 如果是步骤5，启动重量监测
+        if (stepNumber === 5) {
+            // 延迟一点启动，确保UI已更新
+            setTimeout(() => {
+                startStep5WeightMonitoring();
+                
+                // 更新WPP显示
+                if (pcActiveMedicationNameGlobal && pc_managed_medication_details[pcActiveMedicationNameGlobal]) {
+                    const wpp = pc_managed_medication_details[pcActiveMedicationNameGlobal].wpp;
+                    $("#wppDisplayInStep5").text(wpp.toFixed(3) + " g");
+                } else {
+                    $("#wppDisplayInStep5").text("未设置");
+                }
+            }, 300);
+        } else if (window.step5WeightInterval) {
+            // 如果离开步骤5，停止重量监测
+            clearInterval(window.step5WeightInterval);
+            window.step5WeightInterval = null;
+        }
+    };
+
+    // 在PC活动药物变更时更新WPP显示
+    const originalSetPcActiveMedication = window.setPcActiveMedication;
+    window.setPcActiveMedication = function(medName) {
+        // 调用原始函数
+        originalSetPcActiveMedication(medName);
+        
+        // 更新步骤5的WPP显示
+        setTimeout(() => {
+            if (medName && pc_managed_medication_details[medName]) {
+                const wpp = pc_managed_medication_details[medName].wpp;
+                $("#wppDisplayInStep5").text(wpp.toFixed(3) + " g");
+            } else {
+                $("#wppDisplayInStep5").text("未设置");
+            }
+        }, 500);
+    };
 </script>
 </body>
 </html>
