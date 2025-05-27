@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能服药系统 - 远程监控</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .history-panel {
+            flex: 2;
+            min-width: 600px;
+        }
+        .message-panel {
+            flex: 1;
+            min-width: 300px;
+        }
+        h1, h2 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f8f9fa;
+            color: #495057;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .message-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+            border-radius: 4px;
+        }
+        .message-meta {
+            font-size: 0.8em;
+            color: #666;
+            margin-top: 5px;
+        }
+        .message-form {
+            display: flex;
+            flex-direction: column;
+        }
+        .message-form textarea {
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 80px;
+        }
+        .message-form input {
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .btn:hover {
+            background: #45a049;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            display: none;
+        }
+        .status-error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #c62828;
+        }
+        .status-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>智能服药系统远程监控</h1>
+    
+    <div class="container">
+        <div class="panel history-panel">
+            <h2>服药历史记录</h2>
+            <table id="history-table">
+                <thead>
+                    <tr>
+                        <th>时间</th>
+                        <th>药物</th>
+                        <th>数量 (片)</th>
+                        <th>重量 (克)</th>
+                        <th>持续时间 (秒)</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        
+        <div class="panel message-panel">
+            <h2>医生留言板</h2>
+            <div class="message-list" id="message-list"></div>
+            
+            <div class="message-form">
+                <input type="text" id="sender" placeholder="您的名字 (默认: 医生)" />
+                <textarea id="message-content" placeholder="请在此输入留言内容..."></textarea>
+                <div id="status-container" class="status"></div>
+                <button id="send-button" class="btn">发送留言</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 格式化时间戳
+        function formatTimestamp(timestamp) {
+            const date = new Date(timestamp * 1000);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        // 加载服药历史记录
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/history');
+                if (!response.ok) throw new Error('获取历史记录失败');
+                
+                const data = await response.json();
+                const tbody = document.querySelector('#history-table tbody');
+                tbody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = '<td colspan="5">暂无服药记录</td>';
+                    tbody.appendChild(tr);
+                    return;
+                }
+                
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${formatTimestamp(item.timestamp)}</td>
+                        <td>${item.medication_name}</td>
+                        <td>${item.pills_consumed}</td>
+                        <td>${item.weight_consumed.toFixed(2)}</td>
+                        <td>${item.session_duration.toFixed(1)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('加载历史记录出错:', error);
+            }
+        }
+
+        // 加载留言
+        async function loadMessages() {
+            try {
+                const response = await fetch('/api/messages');
+                if (!response.ok) throw new Error('获取留言失败');
+                
+                const data = await response.json();
+                const messageList = document.getElementById('message-list');
+                messageList.innerHTML = '';
+                
+                if (data.length === 0) {
+                    messageList.innerHTML = '<div class="message">暂无留言</div>';
+                    return;
+                }
+                
+                data.forEach(msg => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message';
+                    messageDiv.innerHTML = `
+                        <div>${msg.content}</div>
+                        <div class="message-meta">
+                            ${msg.sender} 于 ${formatTimestamp(msg.timestamp)}
+                        </div>
+                    `;
+                    messageList.appendChild(messageDiv);
+                });
+                
+                // 滚动到最新消息
+                messageList.scrollTop = messageList.scrollHeight;
+            } catch (error) {
+                console.error('加载留言出错:', error);
+            }
+        }
+
+        // 发送留言
+        async function sendMessage() {
+            const content = document.getElementById('message-content').value.trim();
+            const sender = document.getElementById('sender').value.trim() || '医生';
+            const statusContainer = document.getElementById('status-container');
+            
+            if (!content) {
+                statusContainer.className = 'status status-error';
+                statusContainer.textContent = '留言内容不能为空';
+                statusContainer.style.display = 'block';
+                setTimeout(() => {
+                    statusContainer.style.display = 'none';
+                }, 3000);
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content, sender })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    // 清空输入框
+                    document.getElementById('message-content').value = '';
+                    
+                    // 显示成功消息
+                    statusContainer.className = 'status status-success';
+                    statusContainer.textContent = '留言已发送';
+                    statusContainer.style.display = 'block';
+                    
+                    // 重新加载留言
+                    loadMessages();
+                } else {
+                    statusContainer.className = 'status status-error';
+                    statusContainer.textContent = result.message || '留言发送失败';
+                    statusContainer.style.display = 'block';
+                }
+                
+                setTimeout(() => {
+                    statusContainer.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('发送留言出错:', error);
+                statusContainer.className = 'status status-error';
+                statusContainer.textContent = '网络错误，请稍后再试';
+                statusContainer.style.display = 'block';
+                
+                setTimeout(() => {
+                    statusContainer.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 事件监听
+        document.getElementById('send-button').addEventListener('click', sendMessage);
+        document.getElementById('message-content').addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // 初始加载
+        loadHistory();
+        loadMessages();
+        
+        // 定时刷新 (每30秒)
+        setInterval(() => {
+            loadHistory();
+            loadMessages();
+        }, 30000);
+    </script>
+</body>
+</html> 

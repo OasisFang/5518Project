@@ -64,6 +64,16 @@ CREATE TABLE IF NOT EXISTS history (
     session_duration REAL,
     timestamp INTEGER
 )''')
+
+# 添加留言表
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    content TEXT NOT NULL,
+    sender TEXT DEFAULT '医生',
+    timestamp INTEGER
+)''')
+
 conn.commit()
 
 def connect_to_arduino():
@@ -261,6 +271,14 @@ def set_stage_api(stage_id):
                 
                 # 清除所有药物信息（如果需要完全重置）
                 pc_managed_medication_details.clear()
+                
+                # 清除本地历史记录
+                try:
+                    cursor.execute('DELETE FROM history')
+                    conn.commit()
+                    logger.info('已清除本地服药历史记录')
+                except Exception as e:
+                    logger.error(f'清除本地历史记录失败: {e}')
                 
                 # 重置顺序服药会话状态
                 medication_session_active = False
@@ -651,7 +669,7 @@ def lock_and_record_consumption_api():
             logger.info('已将服药记录保存到本地历史数据库')
         except Exception as e:
             logger.error(f"保存本地历史失败: {e}")
-
+        
         # 重置会话数据
         medication_session_data = {
             "start_weight": 0.0,
@@ -841,6 +859,56 @@ def api_history():
 def history_page():
     return render_template('history.html')
 
+@app.route('/remote')
+def remote_monitor_page():
+    return render_template('remote_monitor.html')
+
+# 添加留言相关API
+@app.route('/api/messages', methods=['GET'])
+def get_messages():
+    cursor.execute('SELECT id, content, sender, timestamp FROM messages ORDER BY timestamp DESC LIMIT 50')
+    rows = cursor.fetchall()
+    messages = [{
+        'id': r[0],
+        'content': r[1],
+        'sender': r[2],
+        'timestamp': r[3]
+    } for r in rows]
+    return jsonify(messages)
+
+@app.route('/api/messages', methods=['POST'])
+def add_message():
+    data = request.json
+    if not data or 'content' not in data:
+        return jsonify({'status': 'error', 'message': '留言内容不能为空'}), 400
+    
+    content = data.get('content').strip()
+    sender = data.get('sender', '医生').strip()
+    
+    if not content:
+        return jsonify({'status': 'error', 'message': '留言内容不能为空'}), 400
+    
+    timestamp = int(time.time())
+    
+    try:
+        cursor.execute(
+            'INSERT INTO messages (content, sender, timestamp) VALUES (?, ?, ?)',
+            (content, sender, timestamp)
+        )
+        conn.commit()
+        
+        return jsonify({
+            'status': 'success',
+            'message': '留言已添加',
+            'id': cursor.lastrowid,
+            'content': content,
+            'sender': sender,
+            'timestamp': timestamp
+        })
+    except Exception as e:
+        logger.error(f"添加留言失败: {e}")
+        return jsonify({'status': 'error', 'message': f'添加留言失败: {str(e)}'}), 500
+
 # --- app.py 末尾 ---
 if __name__ == '__main__':
     logger.info("Starting Flask Pillbox Controller.")
@@ -854,12 +922,12 @@ if __name__ == '__main__':
 
         public_url = ngrok.connect(addr=5000, proto="http").public_url
         logger.info(f"ngrok 隧道已创建: {public_url}")
-        logger.info(f"历史页面地址: {public_url}/history")
+        logger.info(f"远程监控页面地址: {public_url}/remote")
     except Exception as e:
         logger.error(f"启动 ngrok 隧道失败: {e}")
 
     # 2. 启动 Arduino 监听线程
-    if not connect_to_arduino():
+    if not connect_to_arduino(): 
         logger.warning("启动时连接 Arduino 失败，监听线程会持续重试。")
     threading.Thread(target=read_from_arduino_thread_function,
                      daemon=True).start()
