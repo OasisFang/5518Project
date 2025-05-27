@@ -31,6 +31,8 @@ arduino_raw_state = { # 直接来自 Arduino 的数据
     "pill_count_arduino_current_med": 0, 
     "current_med_on_arduino": "N/A",    
     "wpp_arduino_current_med": 0.25,    
+    "lid_distance_cm": None,    # 盖子距离
+    "lid_open": False,         # 盖子状态
     "last_update": time.time(),
     "raw_data": ""
 }
@@ -136,7 +138,7 @@ def read_from_arduino_thread_function():
                     arduino_raw_state["raw_data"] = line
                 if line.startswith("DATA:"): 
                     parts = line[5:].split(',')
-                    if len(parts) == 5: 
+                    if len(parts) >= 5: 
                         with data_lock:
                             arduino_raw_state["stage_name"] = parts[0]
                             try: arduino_raw_state["total_weight_in_box_arduino"] = float(parts[1])
@@ -146,6 +148,12 @@ def read_from_arduino_thread_function():
                             arduino_raw_state["current_med_on_arduino"] = parts[3]
                             try: arduino_raw_state["wpp_arduino_current_med"] = float(parts[4])
                             except ValueError: logger.warning(f"无法解析WPP: {parts[4]}")
+                            # 解析超声波传感器数据：距离和状态
+                            if len(parts) >= 7:
+                                try: arduino_raw_state["lid_distance_cm"] = float(parts[5])
+                                except ValueError: arduino_raw_state["lid_distance_cm"] = None
+                                try: arduino_raw_state["lid_open"] = bool(int(parts[6]))
+                                except (ValueError, IndexError): arduino_raw_state["lid_open"] = False
                             
                             if arduino_raw_state["current_med_on_arduino"] == pc_active_medication_name and \
                                pc_active_medication_name in pc_managed_medication_details and \

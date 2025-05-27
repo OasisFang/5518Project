@@ -1,4 +1,5 @@
 #include <DFRobot_HX711_I2C.h>
+#include <Ultrasonic.h>  // 引入超声波库
 
 // SimulatedPillbox.ino (与V5/V6版本一致)
 // 模拟参数和状态
@@ -19,7 +20,8 @@ const char* stageNames[] = {"Weighing", "Medication", "Resetting"};
 
 // 串口通信定时
 unsigned long lastSerialSendTime = 0;
-const long serialSendInterval = 1000; // 每秒发送数据到 PC
+const long serialSendInterval = 200; // 每200ms发送数据到 PC
+// 注意：serialSendInterval 与 weightDisplayInterval 保持一致，以保证整体频率一致
 
 char inputBuffer[64]; // 使用固定大小的缓冲区而不是String
 int inputIndex = 0;
@@ -32,6 +34,9 @@ DFRobot_HX711_I2C MyScale;
 bool isMeasuringMode = false;
 unsigned long lastWeightDisplayTime = 0;
 const long weightDisplayInterval = 200; // 每200ms更新一次重量显示
+
+// 超声波传感器，使用数字引脚7
+Ultrasonic ultrasonic(7);
 
 void setup() {
   Serial.begin(9600);
@@ -131,7 +136,13 @@ void sendDataToPC() {
   Serial.print(F(","));
   Serial.print(selectedMedication);       // Arduino 当前选中的药物
   Serial.print(F(","));
-  Serial.println(weight_per_pill, 3);     // Arduino 当前选中药物的单片重量
+  Serial.print(weight_per_pill, 3);       // Arduino 当前选中药物的单片重量
+  // 超声波传感器距离测量
+  long lidDistance = ultrasonic.MeasureInCentimeters();
+  Serial.print(F(","));
+  Serial.print(lidDistance);              // 药盒盖子与传感器距离
+  Serial.print(F(","));
+  Serial.println(lidDistance > 5 ? 1 : 0); // 距离>5cm表示开启(1)，否则关闭(0)
 }
 
 // 检查串口输入

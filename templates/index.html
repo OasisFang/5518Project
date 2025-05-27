@@ -204,6 +204,10 @@
         .step-label { font-weight: 500; color: #333; display: block; margin-bottom: 0.3rem;}
         .consumption-log-entry { font-size: 0.9em; padding: 0.25rem 0.5rem; border-bottom: 1px dashed #eee; }
         .consumption-log-entry:last-child { border-bottom: none; }
+        /* 盖子开合指示 */
+        .lid-indicator { display: inline-block; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-size: 0.9rem; }
+        .lid-open { background-color: #d4edda; color: #155724; }
+        .lid-closed { background-color: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
@@ -213,6 +217,7 @@
             <div>
                 <span id="connectionStatus" class="status-disconnected">未连接</span>
                 <div id="modeIndicator" class="mode-indicator mode-simulation">模拟模式</div>
+                <div id="lidIndicator" class="lid-indicator lid-closed">关闭</div>
             </div>
         </div>
 
@@ -640,6 +645,8 @@
     let arduinoRawStateGlobal = {}; 
     let pc_managed_medication_details = {}; // 确保初始化这个全局变量
     let consumptionLogEntries = []; 
+    // 新增：记录盖子开合状态，用于变动日志
+    let lastLidOpenState = null; 
 
     // 添加显式的Tab切换函数
     function showTab(tabPaneId, tabButton) {
@@ -1655,6 +1662,20 @@
                 modeIndicator.textContent = currentIsSimulationGlobal ? '模拟模式' : '真实模式';
                 modeIndicator.className = `mode-indicator mode-${currentIsSimulationGlobal ? 'simulation' : 'real'}`;
             }
+            // 更新盖子状态指示
+            const lidIndicator = document.getElementById('lidIndicator');
+            if (lidIndicator) {
+                const open = arduinoRawStateGlobal.lid_open;
+                lidIndicator.textContent = open ? '开启' : '关闭';
+                lidIndicator.className = `lid-indicator lid-${open ? 'open' : 'closed'}`;
+            }
+            // 新增：检测盖子开合状态变化并记录日志
+            if (typeof lastLidOpenState === 'boolean') {
+                if (arduinoRawStateGlobal.lid_open !== lastLidOpenState) {
+                    addLog(arduinoRawStateGlobal.lid_open ? '药盒盖子已打开' : '警告：药盒盖子已关闭', arduinoRawStateGlobal.lid_open ? 'success' : 'warn');
+                }
+            }
+            lastLidOpenState = arduinoRawStateGlobal.lid_open;
 
             const arduinoStageNameEl = document.getElementById('arduinoStageName');
             if (arduinoStageNameEl) arduinoStageNameEl.textContent = arduinoStage;
@@ -1903,7 +1924,7 @@
         
         // 获取初始状态
         fetchStatus(); 
-        setInterval(fetchStatus, 2000); 
+        setInterval(fetchStatus, 200); 
         
         // 显式初始化所有Bootstrap Tab组件
         document.querySelectorAll('.nav-pills .nav-link[data-bs-toggle="pill"]').forEach(function(tabEl) {
