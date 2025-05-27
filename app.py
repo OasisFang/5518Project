@@ -4,6 +4,17 @@ import threading
 import time
 import logging
 import math 
+import os
+import requests
+from pyngrok import ngrok, conf
+import sqlite3
+
+# 持久化 ngrok 认证令牌到配置文件，无需每次输入
+NGROK_AUTH_TOKEN = '2mFiHwvEfuSUrKTx1L8PkXEcKRK_ctEupzpfswsUSCBaj4Ac'
+ngrok.set_auth_token(NGROK_AUTH_TOKEN)
+
+# 云端同步服务器 URL，通过环境变量 `CLOUD_SERVER_URL` 设置
+CLOUD_SERVER_URL = os.environ.get('CLOUD_SERVER_URL', 'https://your-cloud-server.com/api/consumption')
 
 # 配置
 SERIAL_PORT = 'COM3' # 根据实际情况修改
@@ -39,6 +50,21 @@ medication_session_data = {
     "session_start_time": None
 }
 # --- End 全局状态 ---
+
+# 本地历史 SQLite 数据库
+DB_PATH = os.environ.get('HISTORY_DB', 'history.db')
+conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+cursor = conn.cursor()
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    medication_name TEXT,
+    pills_consumed INTEGER,
+    weight_consumed REAL,
+    session_duration REAL,
+    timestamp INTEGER
+)''')
+conn.commit()
 
 def connect_to_arduino():
     global ser 
@@ -601,6 +627,31 @@ def lock_and_record_consumption_api():
             "session_duration": session_duration
         })
         
+        # 新增：同步到云端服务器
+        try:
+            cloud_payload = {
+                "medication_name": med_name,
+                "pills_consumed": pills_consumed,
+                "weight_consumed": weight_consumed,
+                "session_duration": session_duration,
+                "timestamp": time.time()
+            }
+            requests.post(CLOUD_SERVER_URL, json=cloud_payload, timeout=5)
+            logger.info("已将服药记录同步到云端服务器")
+        except Exception as e:
+            logger.error(f"同步到云端服务器失败: {e}")
+
+        # 保存本地历史记录
+        try:
+            cursor.execute(
+                'INSERT INTO history (medication_name, pills_consumed, weight_consumed, session_duration, timestamp) VALUES (?, ?, ?, ?, ?)',
+                (med_name, pills_consumed, weight_consumed, session_duration, int(time.time()))
+            )
+            conn.commit()
+            logger.info('已将服药记录保存到本地历史数据库')
+        except Exception as e:
+            logger.error(f"保存本地历史失败: {e}")
+
         # 重置会话数据
         medication_session_data = {
             "start_weight": 0.0,
@@ -773,10 +824,45 @@ def medication_setup_page():
     """返回药物设置页面(如果不存在则创建一个假页面)"""
     return render_template('inventory_setup.html')  # 临时使用相同页面
 
+@app.route('/api/history', methods=['GET'])
+def api_history():
+    cursor.execute('SELECT medication_name, pills_consumed, weight_consumed, session_duration, timestamp FROM history ORDER BY timestamp DESC')
+    rows = cursor.fetchall()
+    history_list = [{
+        'medication_name': r[0],
+        'pills_consumed': r[1],
+        'weight_consumed': r[2],
+        'session_duration': r[3],
+        'timestamp': r[4]
+    } for r in rows]
+    return jsonify(history_list)
+
+@app.route('/history')
+def history_page():
+    return render_template('history.html')
+
+# --- app.py 末尾 ---
 if __name__ == '__main__':
     logger.info("Starting Flask Pillbox Controller.")
-    if not connect_to_arduino(): 
-        logger.warning("Failed to connect to Arduino on startup. The listener thread will keep trying.")
-    arduino_thread = threading.Thread(target=read_from_arduino_thread_function, daemon=True)
-    arduino_thread.start() 
-    app.run(debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+
+    # 1. 创建 ngrok 隧道
+    try:
+        from pyngrok import ngrok, conf
+
+        # 如果你在澳洲，可选设置区域，减少延迟
+        conf.get_default().region = "ap"   # 也可留空让 ngrok 自动选
+
+        public_url = ngrok.connect(addr=5000, proto="http").public_url
+        logger.info(f"ngrok 隧道已创建: {public_url}")
+        logger.info(f"历史页面地址: {public_url}/history")
+    except Exception as e:
+        logger.error(f"启动 ngrok 隧道失败: {e}")
+
+    # 2. 启动 Arduino 监听线程
+    if not connect_to_arduino():
+        logger.warning("启动时连接 Arduino 失败，监听线程会持续重试。")
+    threading.Thread(target=read_from_arduino_thread_function,
+                     daemon=True).start()
+
+    # 3. 启动 Flask
+    app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)

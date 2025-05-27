@@ -73,6 +73,53 @@ python app.py
    - Use the medication session feature for controlled dispensing
    - Track consumption and inventory levels
 
+## Cloud Synchronization and Remote Access
+
+To sync medication records to your cloud server:
+
+1. Set the environment variable `CLOUD_SERVER_URL` to your server's API endpoint, e.g.:
+   ```bash
+   export CLOUD_SERVER_URL="https://your-cloud-server.com/api/consumption"
+   ```
+2. Install the HTTP client:
+   ```bash
+   pip install requests
+   ```
+3. The application will automatically send medication consumption records to the specified `CLOUD_SERVER_URL` after each session.
+
+To expose your local server via ngrok for remote access:
+
+1. Download and install ngrok from https://ngrok.com/.
+2. Authenticate your ngrok client:
+   ```bash
+   ngrok authtoken YOUR_NGROK_AUTH_TOKEN
+   ```
+3. Run the Flask application:
+   ```bash
+   python app.py
+   ```
+4. In a separate terminal, start ngrok tunnel:
+   ```bash
+   ngrok http 5000
+   ```
+5. Share the generated public URL (e.g., `https://abc123.ngrok.io`) with your doctors so they can access the web interface remotely.
+
+### 保存 ngrok 认证令牌
+
+为了避免每次手动输入 token，您可以永久保存令牌：
+
+1. **设置环境变量（Windows PowerShell）**：
+   ```powershell
+   [Environment]::SetEnvironmentVariable("NGROK_AUTH_TOKEN", "your_token_here", "User")
+   ```
+   这样在新开 PowerShell 窗口后，`pyngrok` 会自动读取该变量。
+
+2. **在代码中设置默认令牌**：
+   打开 `app.py`，找到 `YOUR_NGROK_AUTH_TOKEN`，替换为您的真实令牌：
+   ```python
+   NGROK_AUTH_TOKEN = os.environ.get('NGROK_AUTH_TOKEN', 'your_token_here')
+   ```
+
 ## Safety Features
 
 - Secure compartment locking mechanism
@@ -90,4 +137,12 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Support
 
-For support, please [specify contact information or support channels] 
+For support, please [specify contact information or support channels]
+
+## 查看服药历史
+
+运行应用后，通过以下地址即可查看实时更新的服药历史记录：
+
+```
+http://<your_remote_domain>/history
+``` 

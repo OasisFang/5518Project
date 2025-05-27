@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Medication History</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        h1 { margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 8px 12px; border: 1px solid #ddd; text-align: center; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+    <h1>Medication History</h1>
+    <table id="history-table">
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Medication</th>
+                <th>Pills Consumed</th>
+                <th>Weight Consumed (g)</th>
+                <th>Duration (s)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const data = await res.json();
+                const tbody = document.querySelector('#history-table tbody');
+                tbody.innerHTML = '';
+                data.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const dt = new Date(item.timestamp * 1000).toLocaleString();
+                    tr.innerHTML = `
+                        <td>${dt}</td>
+                        <td>${item.medication_name}</td>
+                        <td>${item.pills_consumed}</td>
+                        <td>${item.weight_consumed.toFixed(2)}</td>
+                        <td>${item.session_duration.toFixed(1)}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {
+                console.error('加载历史记录失败:', e);
+            }
+        }
+
+        // 每 5 秒刷新一次
+        setInterval(loadHistory, 5000);
+        loadHistory();
+    </script>
+</body>
+</html> 
