@@ -559,9 +559,12 @@ def start_medication_session_api():
         # 同步到Arduino
         sync_pc_active_med_to_arduino(medication_name)
         
-        # 记录初始重量
+        # 新增：发送 BOX_TARE 命令，让 Arduino 记录箱子基准重量
+        send_to_arduino_command('BOX_TARE')
+        
+        # 记录初始重量, 已去皮后设为 0
         medication_session_data = {
-            "start_weight": arduino_raw_state["total_weight_in_box_arduino"],
+            "start_weight": 0.0,
             "current_medication": medication_name,
             "compartment_unlocked": False,
             "session_start_time": time.time()
@@ -615,19 +618,15 @@ def lock_and_record_consumption_api():
             if not send_to_arduino_command("LOCK_COMPARTMENT:1"):
                 return jsonify({"status": "error", "message": "无法发送锁定命令到Arduino"}), 500
         
-        # 计算消耗的重量和药片数量
+        # 计算消耗的重量和药片数量（直接使用当前调整后重量的绝对值）
         med_name = medication_session_data["current_medication"]
-        start_weight = medication_session_data["start_weight"]
         current_weight = arduino_raw_state["total_weight_in_box_arduino"]
-        weight_consumed = max(0, start_weight - current_weight)  # 防止负数
+        weight_consumed = abs(current_weight)
         
         # 根据WPP计算消耗的药片数量
         med_details = pc_managed_medication_details[med_name]
         wpp = med_details["wpp"]
-        if wpp > 0.001:  # 防止除以非常小的数
-            pills_consumed = round(weight_consumed / wpp)
-        else:
-            pills_consumed = 0
+        pills_consumed = int(round(weight_consumed / wpp)) if wpp > 0.0001 else 0
         
         # 更新药物库存
         if pills_consumed > 0:
@@ -653,19 +652,25 @@ def lock_and_record_consumption_api():
             "session_duration": session_duration
         })
         
-        # 新增：同步到云端服务器
-        try:
-            cloud_payload = {
-                "medication_name": med_name,
-                "pills_consumed": pills_consumed,
-                "weight_consumed": weight_consumed,
-                "session_duration": session_duration,
-                "timestamp": time.time()
-            }
-            requests.post(CLOUD_SERVER_URL, json=cloud_payload, timeout=5)
-            logger.info("已将服药记录同步到云端服务器")
-        except Exception as e:
-            logger.error(f"同步到云端服务器失败: {e}")
+        # 新增：异步同步到云端服务器，避免阻塞主线程
+        cloud_payload = {
+            "medication_name": med_name,
+            "pills_consumed": pills_consumed,
+            "weight_consumed": weight_consumed,
+            "session_duration": session_duration,
+            "timestamp": time.time()
+        }
+        def _sync_to_cloud(payload):
+            try:
+                # 跳过默认占位地址
+                if CLOUD_SERVER_URL and "your-cloud-server.com" not in CLOUD_SERVER_URL:
+                    requests.post(CLOUD_SERVER_URL, json=payload, timeout=2)
+                    logger.info("已将服药记录异步同步到云端服务器")
+                else:
+                    logger.info("跳过默认云端同步地址，请配置有效 CLOUD_SERVER_URL")
+            except Exception as e:
+                logger.error(f"异步同步到云端服务器失败: {e}")
+        threading.Thread(target=_sync_to_cloud, args=(cloud_payload,), daemon=True).start()
 
         # 保存本地历史记录
         try:
@@ -738,7 +743,6 @@ def get_medication_session_status_api():
 @app.route('/get_current_weight', methods=['GET'])
 def get_current_weight():
     """Return current weight from cached state."""
-    # 直接返回缓存的重量状态，避免串口并发读取冲突
     with data_lock:
         weight = arduino_raw_state.get('total_weight_in_box_arduino', 0.0)
         last_update = arduino_raw_state.get('last_update', time.time())

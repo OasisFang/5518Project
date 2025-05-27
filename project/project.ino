@@ -38,6 +38,8 @@ const long weightDisplayInterval = 200; // 每200ms更新一次重量显示
 // 超声波传感器，使用数字引脚7
 Ultrasonic ultrasonic(7);
 
+float boxTareOffset = 0.0; // 箱子重量基准偏移
+
 void setup() {
   Serial.begin(9600);
   
@@ -127,10 +129,17 @@ void loop() {
 }
 
 void sendDataToPC() {
+  float rawWeight = 0.0;
+  if (!isSimulationMode) {
+    rawWeight = MyScale.readWeight();
+  } else {
+    rawWeight = simulatedWeight;
+  }
+  float adjustedWeight = rawWeight - boxTareOffset;
   Serial.print(F("DATA:"));
   Serial.print(stageNames[currentStage]); // 当前阶段名称
   Serial.print(F(","));
-  Serial.print(simulatedWeight, 2);       // Arduino 当前的模拟总重量
+  Serial.print(adjustedWeight, 2);       // 使用基于BOX_TARE的校正重量
   Serial.print(F(","));
   Serial.print(pill_count);               // 基于 simulatedWeight 和 weight_per_pill 计算出的药丸数量
   Serial.print(F(","));
@@ -363,6 +372,11 @@ void processCommand(const char* command) {
         Serial.println(F("Error: No valid weight readings"));
       }
     }
+  }
+  else if (commandStartsWith(command, "BOX_TARE")) {
+      // 记录当前重量作为基准偏移
+      boxTareOffset = MyScale.readWeight();
+      Serial.println(F("BOX_TARE 完成"));
   }
 
   sendDataToPC(); // 发送更新后的状态到PC

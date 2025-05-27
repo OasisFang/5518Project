@@ -129,6 +129,9 @@
     <div class="container">
         <div class="panel history-panel">
             <h2>服药历史记录</h2>
+            <!-- 本次服药记录摘要 -->
+            <div id="history-summary"></div>
+            <h3>完整服药历史表</h3>
             <table id="history-table">
                 <thead>
                     <tr>
@@ -187,6 +190,17 @@
                     return;
                 }
                 
+                // 构建本次服药记录摘要 (最新2条)
+                const summaryDiv = document.getElementById('history-summary');
+                summaryDiv.innerHTML = '<h3>本次服药记录</h3>';
+                data.slice(0,2).forEach(item => {
+                    const date = new Date(item.timestamp * 1000);
+                    const usTime = date.toLocaleString('en-US', { month:'numeric', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', second:'2-digit' });
+                    const p = document.createElement('p');
+                    p.textContent = `${usTime}: 食用 ${item.medication_name} ${item.pills_consumed} 片，约减少 ${item.weight_consumed.toFixed(2)}g`;
+                    summaryDiv.appendChild(p);
+                });
+                // 构建历史表格
                 data.forEach(item => {
                     const tr = document.createElement('tr');
                     tr.innerHTML = `

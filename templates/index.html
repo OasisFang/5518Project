@@ -647,6 +647,8 @@
     let consumptionLogEntries = []; 
     // 新增：记录盖子开合状态，用于变动日志
     let lastLidOpenState = null; 
+    // 新增：实时测量服药减少重量定时器
+    let consumptionUpdateInterval = null;
 
     // 添加显式的Tab切换函数
     function showTab(tabPaneId, tabButton) {
@@ -945,22 +947,17 @@
     }
 
     /**
-     * 测量当前减少重量并估算服用数量
+     * 测量当前减少重量并估算服用数量（直接使用去皮后的原始重量绝对值）
      */
     function measureConsumption() {
-        const startWeightEl = document.getElementById('sessionStartWeight');
-        let startWeight = 0;
-        if (startWeightEl) {
-            const txt = startWeightEl.textContent.replace(/g$/, '');
-            startWeight = parseFloat(txt) || 0;
-        }
         // 获取 Arduino 缓存的当前重量，避免串口冲突导致超时
         fetch('/get_current_weight')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success' && data.weight !== undefined) {
                     const currentWeight = parseFloat(data.weight) || 0;
-                    const weightReduced = Math.max(0, startWeight - currentWeight);
+                    // 直接用绝对值作为消耗重量
+                    const weightReduced = Math.abs(currentWeight);
                     const weightReducedEl = document.getElementById('measuredWeightReduced');
                     const pillCountEl = document.getElementById('measuredPillCount');
                     if (weightReducedEl) weightReducedEl.textContent = weightReduced.toFixed(2);
@@ -1068,13 +1065,28 @@
         if (resultEl) {
             resultEl.style.display = 'none';
         }
+        
+        // 新增：进入步骤3时开启实时测量减少重量，并在离开时停止
+        if (stepNumber === 3) {
+            if (!consumptionUpdateInterval) {
+                consumptionUpdateInterval = setInterval(measureConsumption, 200);
+            }
+        } else {
+            if (consumptionUpdateInterval) {
+                clearInterval(consumptionUpdateInterval);
+                consumptionUpdateInterval = null;
+            }
+        }
     }
 
     function showMedicationResult(sessionData) {
+        // 清除实时测量减少重量定时器，避免在结果页继续测量
+        if (consumptionUpdateInterval) {
+            clearInterval(consumptionUpdateInterval);
+            consumptionUpdateInterval = null;
+        }
         // 隐藏所有步骤
-        document.querySelectorAll('.step-content').forEach(el => {
-            el.style.display = 'none';
-        });
+        document.querySelectorAll('.step-content').forEach(el => el.style.display = 'none');
         
         // 更新结果信息
         document.getElementById('resultMedName').textContent = sessionData.current_medication || '-';
