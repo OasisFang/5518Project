@@ -46,11 +46,11 @@
                     tbody.appendChild(tr);
                 });
             } catch (e) {
-                console.error('加载历史记录失败:', e);
+                console.error('Failed to load history records:', e);
             }
         }
 
-        // 每 5 秒刷新一次
+        // Refresh every 5 seconds
         setInterval(loadHistory, 5000);
         loadHistory();
     </script>

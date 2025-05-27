@@ -76,6 +76,18 @@ CREATE TABLE IF NOT EXISTS messages (
     timestamp INTEGER
 )''')
 
+# --- 创建服药提醒表 ---
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS reminders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    medication_name TEXT NOT NULL,
+    start_datetime INTEGER NOT NULL,
+    end_datetime INTEGER NOT NULL,
+    frequency_type TEXT NOT NULL,   -- 'interval' 或 'daily'
+    frequency_value REAL NOT NULL   -- 小时间隔 或 每日次数
+)''')
+conn.commit()
+
 conn.commit()
 
 def connect_to_arduino():
@@ -301,8 +313,8 @@ def set_stage_api(stage_id):
                 send_to_arduino_command("RESET_ALL")
                 
             logger.info("系统已完全重置：清除了所有药物信息和会话状态")
-        return jsonify({"status": "success", "message": f"阶段切换命令已发送 (阶段 ID: {stage_id})。", "stage_id": stage_id})
-    return jsonify({"status": "error", "message": "阶段切换命令发送失败"}), 500
+        return jsonify({"status": "success", "message": f"Stage switch command sent (Stage ID: {stage_id}).", "stage_id": stage_id})
+    return jsonify({"status": "error", "message": "Stage switch command failed to send."}), 500
 
 @app.route('/add_or_update_known_medication', methods=['POST'])
 def add_or_update_known_medication_api():
@@ -920,6 +932,43 @@ def add_message():
     except Exception as e:
         logger.error(f"添加留言失败: {e}")
         return jsonify({'status': 'error', 'message': f'添加留言失败: {str(e)}'}), 500
+
+# --- 提醒相关API ---
+@app.route('/api/reminders', methods=['GET'])
+def get_reminders():
+    cursor.execute('SELECT id, medication_name, start_datetime, end_datetime, frequency_type, frequency_value FROM reminders')
+    rows = cursor.fetchall()
+    reminders = []
+    for r in rows:
+        reminders.append({
+            'id': r[0],
+            'medication_name': r[1],
+            'start_datetime': r[2],
+            'end_datetime': r[3],
+            'frequency_type': r[4],
+            'frequency_value': r[5]
+        })
+    return jsonify(reminders)
+
+@app.route('/api/reminders', methods=['POST'])
+def add_reminder():
+    data = request.json or {}
+    name = data.get('medication_name')
+    sd = data.get('start_datetime')
+    ed = data.get('end_datetime')
+    ftype = data.get('frequency_type')
+    fval = data.get('frequency_value')
+    if not name or sd is None or ed is None or ftype not in ('interval','daily') or not fval:
+        return jsonify({'status':'error','message':'参数错误'}), 400
+    cursor.execute('INSERT INTO reminders (medication_name,start_datetime,end_datetime,frequency_type,frequency_value) VALUES (?,?,?,?,?)',
+                   (name, int(sd), int(ed), ftype, float(fval)))
+    conn.commit()
+    return jsonify({'status':'success','id': cursor.lastrowid})
+
+# 添加 /calendar 页面
+@app.route('/calendar')
+def calendar_page():
+    return render_template('calendar.html')
 
 # --- app.py 末尾 ---
 if __name__ == '__main__':

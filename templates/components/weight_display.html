@@ -1,26 +1,27 @@
 <!-- 实时重量显示组件 -->
+<!-- Real-Time Weight Display Component -->
 <div class="card mb-3" id="weightDisplayCard">
   <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-    <h5 class="mb-0">当前药盒重量</h5>
+    <h5 class="mb-0">Current Pillbox Weight</h5>
     <button type="button" class="btn btn-sm btn-light" id="refreshWeightBtn">
-      <i class="fas fa-sync-alt"></i> 强制刷新
+      <i class="fas fa-sync-alt"></i> Force Refresh
     </button>
   </div>
   <div class="card-body">
     <div class="text-center mb-3">
       <h2 id="currentWeightDisplay">0.000</h2>
-      <p class="text-muted mb-0">克 (g)</p>
-      <small id="weightUpdateStatus" class="text-muted">等待数据...</small>
+      <p class="text-muted mb-0">g</p>
+      <small id="weightUpdateStatus" class="text-muted">Waiting for data...</small>
     </div>
     
     <div class="mt-3">
-      <h5>药片计算</h5>
+      <h5>Pill Calculation</h5>
       <div class="d-flex justify-content-between">
-        <span>单片重量:</span>
+        <span>Single Pill Weight:</span>
         <span id="wppDisplay">0.000 g</span>
       </div>
       <div class="d-flex justify-content-between">
-        <span>估计药片数:</span>
+        <span>Estimated Pill Count:</span>
         <span id="pillCountDisplay">0</span>
       </div>
       <div class="progress mt-2">
@@ -30,10 +31,10 @@
     
     <div class="d-grid gap-2 mt-3">
       <button type="button" class="btn btn-success" id="confirmWeightBtn">
-        确认重量和药片数量
+        Confirm Weight and Pill Count
       </button>
       <button type="button" class="btn btn-outline-secondary" id="tareWeightBtn">
-        <i class="fas fa-balance-scale"></i> 重新去皮/校准
+        <i class="fas fa-balance-scale"></i> Retare/Calibrate
       </button>
     </div>
   </div>
@@ -96,19 +97,18 @@
     
     // 强制刷新重量（使用新API）
     function forceRefreshWeight() {
-      $("#refreshWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 刷新中');
-      $("#weightUpdateStatus").text("正在强制刷新...");
+      $("#refreshWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Refreshing...');
+      $("#weightUpdateStatus").text("Force refreshing...");
       
       $.post("/force_refresh_weight")
         .done(function(data) {
           if (data.status === "success") {
             updateWeightDisplay(data.weight, 0);
-            showWeightSuccess(data.message || "刷新成功");
-            // 重置稳定计数器
+            showWeightSuccess(data.message || "Refresh successful");
             weightStabilityCounter = 0;
             lastWeight = data.weight;
           } else {
-            showWeightError(data.message || "刷新失败");
+            showWeightError(data.message || "Refresh failed");
           }
         })
         .fail(function(xhr) {
@@ -119,26 +119,25 @@
           showWeightError(errorMsg);
         })
         .always(function() {
-          $("#refreshWeightBtn").prop("disabled", false).html('<i class="fas fa-sync-alt"></i> 强制刷新');
+          $("#refreshWeightBtn").prop("disabled", false).html('<i class="fas fa-sync-alt"></i> Force Refresh');
         });
     }
     
     // 去皮/校准
     function tareWeight() {
-      $("#tareWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 校准中');
+      $("#tareWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Calibrating...');
       
       $.post("/tare_arduino_sim_only")
         .done(function(data) {
-          showWeightSuccess("去皮成功，传感器已校准为0");
-          // 延迟后强制刷新一次
+          showWeightSuccess("Tare successful, sensor is now zeroed");
           setTimeout(forceRefreshWeight, 500);
         })
         .fail(function() {
-          showWeightError("去皮失败，请重试");
+          showWeightError("Tare failed, please try again");
         })
         .always(function() {
           setTimeout(function() {
-            $("#tareWeightBtn").prop("disabled", false).html('<i class="fas fa-balance-scale"></i> 重新去皮/校准');
+            $("#tareWeightBtn").prop("disabled", false).html('<i class="fas fa-balance-scale"></i> Retare/Calibrate');
           }, 1000);
         });
     }
@@ -147,7 +146,7 @@
     function confirmWeightAndCount() {
       const activeMed = window.pillboxApp.getActiveMedication();
       if (!activeMed) {
-        showWeightError("请先选择药物");
+        showWeightError("Please select a medication first");
         return;
       }
       
@@ -155,13 +154,13 @@
       const wpp = window.pillboxApp.getMedicationWpp(activeMed);
       
       if (wpp <= 0.001) {
-        showWeightError("所选药物的单片重量无效，请先设置WPP");
+        showWeightError("Invalid pill weight for selected medication, please set WPP first");
         return;
       }
       
       const pillCount = Math.round(currentWeight / wpp);
       
-      $("#confirmWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> 处理中');
+      $("#confirmWeightBtn").prop("disabled", true).html('<i class="fas fa-spinner fa-spin"></i> Processing...');
       
       // 使用已有的API更新状态
       $.ajax({
@@ -184,7 +183,7 @@
           showWeightError("无法连接到服务器");
         },
         complete: function() {
-          $("#confirmWeightBtn").prop("disabled", false).html('确认重量和药片数量');
+          $("#confirmWeightBtn").prop("disabled", false).html('Confirm Weight and Pill Count');
         }
       });
     }

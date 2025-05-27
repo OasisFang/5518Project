@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>智能药盒控制器 V6_fix_4</title>
+    <title>Smart Pillbox Controller V6_fix_4</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
@@ -213,37 +213,38 @@
 <body>
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h1 class="mb-0" style="font-size: 1.75rem;">智能药盒控制器 V6_fix_4</h1>
+            <h1 class="mb-0" style="font-size: 1.75rem;">Smart Pillbox Controller V6_fix_4</h1>
             <div>
-                <span id="connectionStatus" class="status-disconnected">未连接</span>
-                <div id="modeIndicator" class="mode-indicator mode-simulation">模拟模式</div>
-                <div id="lidIndicator" class="lid-indicator lid-closed">关闭</div>
+                <span id="connectionStatus" class="status-disconnected">Disconnected</span>
+                <div id="modeIndicator" class="mode-indicator mode-simulation">Simulation Mode</div>
+                <div id="lidIndicator" class="lid-indicator lid-closed">Closed</div>
             </div>
         </div>
 
         <div class="card">
-            <div class="card-header">全局控制</div>
+            <div class="card-header">Global Control</div>
             <div class="card-body d-flex justify-content-start align-items-center">
-                <button class="btn btn-warning me-2 btn-sm" onclick="setMode('simulation')">模拟模式</button>
-                <button class="btn btn-success me-2 btn-sm" onclick="setMode('real')">真实模式</button>
+                <button class="btn btn-warning me-2 btn-sm" onclick="setMode('simulation')">Simulation Mode</button>
+                <button class="btn btn-success me-2 btn-sm" onclick="setMode('real')">Real Mode</button>
                 <div class="vr mx-2"></div>
-                <button class="btn btn-primary me-2 btn-sm" onclick="setStage(0)">称重/设置阶段</button>
-                <button class="btn btn-info me-2 btn-sm" onclick="setStage(1)">服药阶段</button>
-                <button class="btn btn-danger btn-sm" onclick="setStage(2)">重置系统 (Arduino)</button>
+                <button class="btn btn-primary me-2 btn-sm" onclick="setStage(0)">Weighing/Setup Stage</button>
+                <button class="btn btn-info me-2 btn-sm" onclick="setStage(1)">Medication Stage</button>
+                <button class="btn btn-secondary me-2 btn-sm" onclick="location.href='/calendar'">Calendar Reminders</button>
+                <button class="btn btn-danger btn-sm" onclick="setStage(2)">Reset System (Arduino)</button>
             </div>
         </div>
 
         <div class="row">
             <div class="col-md-5">
                 <div class="card">
-                    <div class="card-header">Arduino 实时状态</div>
+                    <div class="card-header">Arduino Real-Time Status</div>
                     <div class="card-body">
-                        <p class="mb-1 small-text"><strong>阶段:</strong> <span id="arduinoStageName">N/A</span></p>
-                        <p class="mb-1 small-text"><strong>当前选中药物:</strong> <span id="arduinoCurrentMed">N/A</span></p>
-                        <p class="mb-1 small-text"><strong>该药物WPP (g):</strong> <span id="arduinoCurrentMedWPP">N/A</span></p>
-                        <p class="mb-1 small-text"><strong>药盒总重 (g):</strong> <span id="arduinoTotalWeight">N/A</span></p>
-                        <p class="mb-1 small-text"><strong>该药物计算数量:</strong> <span id="arduinoCurrentMedCount">N/A</span></p>
-                        <details class="mt-2"><summary class="small-text text-muted" style="cursor:pointer;">原始数据</summary>
+                        <p class="mb-1 small-text"><strong>Stage:</strong> <span id="arduinoStageName">N/A</span></p>
+                        <p class="mb-1 small-text"><strong>Current Medication:</strong> <span id="arduinoCurrentMed">N/A</span></p>
+                        <p class="mb-1 small-text"><strong>Medication WPP (g):</strong> <span id="arduinoCurrentMedWPP">N/A</span></p>
+                        <p class="mb-1 small-text"><strong>Pillbox Total Weight (g):</strong> <span id="arduinoTotalWeight">N/A</span></p>
+                        <p class="mb-1 small-text"><strong>Pill Count:</strong> <span id="arduinoCurrentMedCount">N/A</span></p>
+                        <details class="mt-2"><summary class="small-text text-muted" style="cursor:pointer;">Raw Data</summary>
                             <code id="rawData" style="font-size:0.8em; display:block; max-height: 50px; overflow-y:auto;">N/A</code>
                         </details>
                     </div>
@@ -251,21 +252,21 @@
             </div>
             <div class="col-md-7">
                 <div class="card">
-                    <div class="card-header">PC 端管理药物状态 (<span id="pcActiveMedicationDisplay" class="text-warning">当前操作: 无</span>)</div>
+                    <div class="card-header">PC-Managed Medication Status (<span id="pcActiveMedicationDisplay" class="text-warning">Current: None</span>)</div>
                     <div class="card-body">
                         <!-- 添加新的药物输入区域 -->
                         <div class="row g-3 align-items-end mb-3">
                             <div class="col-md-6">
-                                <label for="newMedNameInput" class="form-label form-label-sm">添加新药物:</label>
-                                <input type="text" id="newMedNameInput" class="form-control form-control-sm" placeholder="输入药物名称">
+                                <label for="newMedNameInput" class="form-label form-label-sm">Add New Medication:</label>
+                                <input type="text" id="newMedNameInput" class="form-control form-control-sm" placeholder="Enter medication name">
                             </div>
                             <div class="col-md-auto">
-                                <button class="btn btn-success btn-sm w-100" onclick="addOrUpdateKnownMedication()">添加到PC列表</button>
+                                <button class="btn btn-success btn-sm w-100" onclick="addOrUpdateKnownMedication()">Add to PC List</button>
                             </div>
                         </div>
                         <div style="max-height: 200px; overflow-y: auto;">
                             <table class="table table-sm table-striped">
-                                <thead><tr><th>药物</th><th>WPP (g)</th><th>总重 (g)</th><th>数量</th></tr></thead>
+                                <thead><tr><th>Medication</th><th>WPP (g)</th><th>Total Weight (g)</th><th>Count</th></tr></thead>
                                 <tbody id="pcManagedMedicationsTable"></tbody>
                             </table>
                         </div>
@@ -275,19 +276,19 @@
         </div>
         
         <div id="medicationManagementCard" class="card">
-            <div class="card-header">药物管理 (PC 端定义药物列表)</div>
+            <div class="card-header">Medication Management (PC-Defined Medication List)</div>
             <div class="card-body">
                 <!-- 步骤1: 添加或选择药物 -->
                 <div id="wppStep1" class="wpp-step-content">
-                    <h6 class="step-label">步骤1: 添加或选择药物</h6>
+                    <h6 class="step-label">Step 1: Add or Select Medication</h6>
                     <hr>
-                    <h6 class="section-title">PC已知药物清单 (点击名称以将其设为当前操作药物)</h6>
+                    <h6 class="section-title">PC Known Medication List (Click Name to Set as Current Medication)</h6>
                     <table class="table table-hover table-sm mb-3">
-                        <thead><tr><th>药物名称 (设为活动)</th><th>WPP (g)</th><th>总重 (g)</th><th>估算数量</th></tr></thead>
+                        <thead><tr><th>Medication Name (Set Active)</th><th>WPP (g)</th><th>Total Weight (g)</th><th>Estimated Count</th></tr></thead>
                         <tbody id="knownMedicationsClickableTableBody"></tbody>
                     </table>
                     <div class="d-flex justify-content-end">
-                        <button class="btn btn-primary btn-sm" onclick="moveToWppStep(2)">下一步: 选择测量模式</button>
+                        <button class="btn btn-primary btn-sm" onclick="moveToWppStep(2)">Next: Select Measurement Mode</button>
                     </div>
                 </div>
                 <!-- 只有选中药物后才显示后续步骤 -->
@@ -295,7 +296,7 @@
                     <!-- 步骤式WPP测量界面（步骤2~6） -->
                     <div class="card bg-light mb-3">
                         <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0">步骤式药物单片重量(WPP)测量</h6>
+                            <h6 class="mb-0">Step-by-Step WPP Measurement</h6>
                         </div>
                         <div class="card-body">
                             <div class="d-flex justify-content-center align-items-center mb-3">
@@ -314,112 +315,112 @@
                             
                             <!-- 步骤2: 选择测量模式 -->
                             <div id="wppStep2" class="wpp-step-content" style="display:none;">
-                                <h6 class="step-label">步骤2: 选择测量模式</h6>
-                                <p class="small-text mb-2">选择合适的测量模式设定药物单片重量(WPP)</p>
+                                <h6 class="step-label">Step 2: Select Measurement Mode</h6>
+                                <p class="small-text mb-2">Choose an appropriate setting for WPP measurement of single pill weight</p>
                                 <div class="d-flex mb-3">
-                                    <button class="btn btn-outline-primary me-2" onclick="moveToWppStep(3, 'simulated')">模拟环境: 手动输入单片药重</button>
-                                    <button class="btn btn-outline-success" onclick="moveToWppStep(3, 'real')">真实/模拟环境: 测量单片药重</button>
+                                    <button class="btn btn-outline-primary me-2" onclick="moveToWppStep(3, 'simulated')">Simulated Environment: Manual Input of Single Pill Weight</button>
+                                    <button class="btn btn-outline-success" onclick="moveToWppStep(3, 'real')">Real/Simulated Environment: Measure Single Pill Weight</button>
                                 </div>
                             </div>
                             
                             <!-- 步骤3: 模拟环境输入 -->
                             <div id="wppStep3-simulated" class="wpp-step-content" style="display:none;">
-                                <h6 class="step-label">步骤3: 输入单片药重</h6>
+                                <h6 class="step-label">Step 3: Input Single Pill Weight</h6>
                                 <div class="row g-2 align-items-end mb-3">
                                     <div class="col">
-                                        <label for="simulatedSinglePillWeightInput" class="form-label form-label-sm">输入这 <strong class="text-danger">一粒药</strong> 的模拟重量 (g):</label>
+                                        <label for="simulatedSinglePillWeightInput" class="form-label form-label-sm">Input the weight of this <strong class="text-danger">single pill</strong> in simulated mode (g):</label>
                                         <input type="number" step="0.001" id="simulatedSinglePillWeightInput" class="form-control form-control-sm">
                                     </div>
                                     <div class="col-auto">
-                                        <button class="btn btn-success btn-sm" onclick="setWPPFromSimulatedSinglePillWeight()">确认并更新WPP</button>
+                                        <button class="btn btn-success btn-sm" onclick="setWPPFromSimulatedSinglePillWeight()">Confirm and Update WPP</button>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between mt-3">
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(2, 'simulated')">返回</button>
-                                    <button class="btn btn-sm btn-primary" onclick="moveToWppStep(4)">下一步: 确认WPP设置</button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(2, 'simulated')">Back</button>
+                                    <button class="btn btn-sm btn-primary" onclick="moveToWppStep(4)">Next: Confirm WPP Settings</button>
                                 </div>
                             </div>
                             
                             <!-- 步骤3: 真实环境测量 -->
                             <div id="wppStep3-real" class="wpp-step-content" style="display:none;">
-                                <h6 class="step-label">步骤3: 准备测量单片药重</h6>
-                                <p class="small-text">在真实模式下，通过实际传感器读数来设定WPP。在模拟模式下，可手动输入模拟的测量值。</p>
+                                <h6 class="step-label">Step 3: Prepare to Measure Single Pill Weight</h6>
+                                <p class="small-text">In real mode, WPP is set through actual sensor readings. In simulated mode, you can manually input simulated values.</p>
                                 <div id="realMeasureWPPButtonContainer">
-                                    <button class="btn btn-outline-secondary btn-sm mb-2" onclick="tareArduinoForMeasurement()">准备测量: 为单片药去皮 (Arduino清零)</button>
-                                    <p class="small-text mb-1">(物理操作) 将 '<span class="current-active-med-name-wpp text-primary"></span>' 的 <strong class="text-danger">一粒药片</strong> 放入药盒并等待重量稳定。</p>
+                                    <button class="btn btn-outline-secondary btn-sm mb-2" onclick="tareArduinoForMeasurement()">Prepare Measurement: Tare (Arduino Zero) the Pillbox</button>
+                                    <p class="small-text mb-1">(Physical operation) Place '<span class="current-active-med-name-wpp text-primary"></span>'s <strong class="text-danger">single pill</strong> in the pillbox and wait for weight stabilization.</p>
                                     
                                     <!-- 在真实模式下显示实时重量 -->
                                     <div id="realTimeWeightContainerInStep3" class="real-time-weight mt-3" style="display:none;">
-                                        <strong>实时重量:</strong> <span id="realTimeWeightValueInStep3">0.00</span>g
-                                        <div class="small-text text-muted">(来自Arduino传感器实时数据)</div>
-                                        <button class="btn btn-sm btn-outline-warning mt-2" onclick="tareArduinoForMeasurement()">传感器去皮/归零</button>
+                                        <strong>Real-Time Weight:</strong> <span id="realTimeWeightValueInStep3">0.00</span>g
+                                        <div class="small-text text-muted">(From Arduino real-time data)</div>
+                                        <button class="btn btn-sm btn-outline-warning mt-2" onclick="tareArduinoForMeasurement()">Sensor Tare/Zero</button>
                                     </div>
                                     
                                     <!-- 添加模拟模式下的手动输入 -->
                                     <div id="simulatedWPPInputContainer" style="display:none;" class="mt-3">
                                         <div class="row g-2 align-items-end">
                                             <div class="col">
-                                                <label for="simulatedRealModeWeightInput" class="form-label form-label-sm">模拟测量: 输入这 <strong class="text-danger">一粒药</strong> 的重量 (g):</label>
+                                                <label for="simulatedRealModeWeightInput" class="form-label form-label-sm">Simulated Measurement: Input the weight of this <strong class="text-danger">single pill</strong> (g):</label>
                                                 <input type="number" step="0.001" id="simulatedRealModeWeightInput" class="form-control form-control-sm">
                                             </div>
                                             <div class="col-auto">
-                                                <button class="btn btn-success btn-sm" onclick="setWPPFromRealModeSimulatedWeight()">确认并更新WPP</button>
+                                                <button class="btn btn-success btn-sm" onclick="setWPPFromRealModeSimulatedWeight()">Confirm and Update WPP</button>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between mt-3">
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(2, 'real')">返回</button>
-                                    <button class="btn btn-sm btn-primary" onclick="moveToStep4WithCurrentWeight()">下一步: 确认测量</button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(2, 'real')">Back</button>
+                                    <button class="btn btn-sm btn-primary" onclick="moveToStep4WithCurrentWeight()">Next: Confirm Measurement</button>
                                 </div>
                             </div>
                             
                             <!-- 步骤4: 确认WPP -->
                             <div id="wppStep4" class="wpp-step-content" style="display:none;">
-                                <h6 class="step-label">步骤4: 确认WPP设置</h6>
-                                <p class="small-text mb-2">WPP已设置完成，请确认信息无误</p>
+                                <h6 class="step-label">Step 4: Confirm WPP Settings</h6>
+                                <p class="small-text mb-2">WPP has been set up correctly, please confirm the information is accurate</p>
                                 <div class="alert alert-info">
-                                    <div><strong>药物:</strong> <span id="wppConfirmMedName">-</span></div>
-                                    <div><strong>单片重量(WPP):</strong> <span id="wppConfirmValue">-</span>g</div>
+                                    <div><strong>Medication:</strong> <span id="wppConfirmMedName">-</span></div>
+                                    <div><strong>Single Pill Weight (WPP):</strong> <span id="wppConfirmValue">-</span>g</div>
                                     <div id="realTimeWeightContainer" style="display:none;">
-                                        <div class="mt-2"><strong>实时重量:</strong> <span id="realTimeWeightValue">-</span>g</div>
-                                        <div class="small-text text-muted">(来自Arduino传感器实时数据)</div>
+                                        <div class="mt-2"><strong>Real-Time Weight:</strong> <span id="realTimeWeightValue">-</span>g</div>
+                                        <div class="small-text text-muted">(From Arduino real-time data)</div>
                                     </div>
                                 </div>
                                 <div class="d-flex justify-content-between mt-3">
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(3)">返回</button>
-                                    <button class="btn btn-sm btn-primary" onclick="moveToWppStep(5)">下一步: 设置库存</button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(3)">Back</button>
+                                    <button class="btn btn-sm btn-primary" onclick="moveToWppStep(5)">Next: Set Inventory</button>
                                 </div>
                             </div>
 
                             <!-- 步骤5: 设置库存 -->
                             <div id="wppStep5" class="wpp-step-content" style="display:none;">
-                                <h6 class="step-label">步骤5: 设置药物库存</h6>
-                                <p class="small-text mb-2">为 '<span class="current-active-med-name-wpp text-primary"></span>' 设置药盒内数量/总重</p>
+                                <h6 class="step-label">Step 5: Set Medication Inventory</h6>
+                                <p class="small-text mb-2">Set the number/total weight of '<span class="current-active-med-name-wpp text-primary"></span>' in the pillbox</p>
                                 
                                 <!-- 实时重量显示卡片 -->
                                 <div class="card mb-3" id="realTimeWeightCard">
                                     <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-                                        <h6 class="mb-0">当前药盒实时重量</h6>
+                                        <h6 class="mb-0">Current Pillbox Real-Time Weight</h6>
                                         <button type="button" class="btn btn-sm btn-light" id="refreshWeightBtnStep5" onclick="refreshWeightStep5()">
-                                            <i class="fas fa-sync-alt"></i> 刷新重量
+                                            <i class="fas fa-sync-alt"></i> Refresh Weight
                                         </button>
                                     </div>
                                     <div class="card-body">
                                         <div class="text-center mb-3">
                                             <h3 id="currentWeightDisplayInStep5">0.000</h3>
-                                            <p class="text-muted mb-0">克 (g)</p>
-                                            <small id="weightUpdateStatusInStep5" class="text-muted">等待数据...</small>
+                                            <p class="text-muted mb-0">g</p>
+                                            <small id="weightUpdateStatusInStep5" class="text-muted">Waiting for data...</small>
                                         </div>
                                         
                                         <div class="mt-3">
-                                            <h6>药片计算</h6>
+                                            <h6>Pill Calculation</h6>
                                             <div class="d-flex justify-content-between">
-                                                <span>单片重量:</span>
+                                                <span>Single Pill Weight:</span>
                                                 <span id="wppDisplayInStep5">0.000 g</span>
                                             </div>
                                             <div class="d-flex justify-content-between">
-                                                <span>估计药片数:</span>
+                                                <span>Estimated Pill Count:</span>
                                                 <span id="pillCountDisplayInStep5">0</span>
                                             </div>
                                             <div class="progress mt-2">
@@ -432,7 +433,7 @@
                                                 确认重量和药片数量
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary" id="tareWeightBtnInStep5" onclick="tareArduinoForMeasurement()">
-                                                <i class="fas fa-balance-scale"></i> 去皮/校准
+                                                <i class="fas fa-balance-scale"></i> Tare/Calibrate
                                             </button>
                                         </div>
                                     </div>
@@ -441,79 +442,79 @@
                                 <div id="weighingSimModeOnlyControls"> 
                                     <ul class="nav nav-pills mb-3 nav-fill" id="simInventoryUpdateModeTab" role="tablist">
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="inv-sim-measure-total-tab" data-bs-toggle="pill" data-bs-target="#inv-sim-measure-total-pane" type="button" role="tab" aria-controls="inv-sim-measure-total-pane" aria-selected="true" onclick="showTab('inv-sim-measure-total-pane', this)">通过总重更新 (模拟测量)</button>
+                                            <button class="nav-link active" id="inv-sim-measure-total-tab" data-bs-toggle="pill" data-bs-target="#inv-sim-measure-total-pane" type="button" role="tab" aria-controls="inv-sim-measure-total-pane" aria-selected="true" onclick="showTab('inv-sim-measure-total-pane', this)">Update via Total Weight (Simulated Measurement)</button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="inv-sim-manual-count-tab" data-bs-toggle="pill" data-bs-target="#inv-sim-manual-count-pane" type="button" role="tab" aria-controls="inv-sim-manual-count-pane" aria-selected="false" onclick="showTab('inv-sim-manual-count-pane', this)">通过手动数量更新</button>
+                                            <button class="nav-link" id="inv-sim-manual-count-tab" data-bs-toggle="pill" data-bs-target="#inv-sim-manual-count-pane" type="button" role="tab" aria-controls="inv-sim-manual-count-pane" aria-selected="false" onclick="showTab('inv-sim-manual-count-pane', this)">Update via Manual Count</button>
                                         </li>
                                     </ul>
                                     <div class="tab-content" id="simInventoryUpdateModeTabContent">
                                         <div class="tab-pane fade show active" id="inv-sim-measure-total-pane" role="tabpanel" aria-labelledby="inv-sim-measure-total-tab">
-                                            <p class="small-text">模拟测量药盒内活动药物的总重量。</p>
-                                            <button class="btn btn-outline-secondary btn-sm mb-2" onclick="tareArduinoForMeasurement()">步骤A1: 为当前药物批次去皮 (Arduino清零)</button>
-                                            <p class="small-text mb-1">步骤A2: (虚拟操作) 将 '<span class="current-active-med-name-wpp text-primary"></span>' 的所有药片放入药盒。</p>
+                                            <p class="small-text">Simulated measurement of the total weight of active medication in the pillbox.</p>
+                                            <button class="btn btn-outline-secondary btn-sm mb-2" onclick="tareArduinoForMeasurement()">Step A1: Tare (Arduino Zero) Current Medication Batch</button>
+                                            <p class="small-text mb-1">Step A2: (Virtual operation) Place all pills of '<span class="current-active-med-name-wpp text-primary"></span>' into the pillbox.</p>
                                             <div class="row g-2 align-items-end">
                                                 <div class="col">
-                                                    <label for="simBatchTotalWeightInput" class="form-label form-label-sm">步骤A3: 输入这批药的模拟总重量 (g):</label>
+                                                    <label for="simBatchTotalWeightInput" class="form-label form-label-sm">Step A3: Input the simulated total weight of this batch of medication (g):</label>
                                                     <input type="number" step="0.01" id="simBatchTotalWeightInput" class="form-control form-control-sm">
                                                 </div>
                                                 <div class="col-auto">
-                                                    <button class="btn btn-primary btn-sm" onclick="setInventoryBySimulatedBatchWeight()">设置总重 & 计算数量</button>
+                                                    <button class="btn btn-primary btn-sm" onclick="setInventoryBySimulatedBatchWeight()">Set Total Weight & Calculate Count</button>
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="tab-pane fade" id="inv-sim-manual-count-pane" role="tabpanel" aria-labelledby="inv-sim-manual-count-tab">
-                                            <p class="small-text">手动输入药盒内活动药物的总数量。</p>
+                                            <p class="small-text">Manual input of the total number of active medication in the pillbox.</p>
                                             <div class="row g-2 align-items-end">
                                                 <div class="col">
-                                                    <label for="inventoryManualPillCountInput" class="form-label form-label-sm">步骤B1: 输入 '<span class="current-active-med-name-wpp text-primary"></span>' 的总药片数量:</label>
+                                                    <label for="inventoryManualPillCountInput" class="form-label form-label-sm">Step B1: Input the total number of pills of '<span class="current-active-med-name-wpp text-primary"></span>' (as counted by hand):</label>
                                                     <input type="number" id="inventoryManualPillCountInput" class="form-control form-control-sm" min="0">
                                                 </div>
                                                 <div class="col-auto">
-                                                    <button class="btn btn-primary btn-sm" onclick="setInventoryByManualPillCount()">设置数量 & 计算总重</button>
+                                                    <button class="btn btn-primary btn-sm" onclick="setInventoryByManualPillCount()">Set Count & Calculate Total Weight</button>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <p class="small-text mt-2" id="weighingRealModeInfoForInventory" style="display:none;">真实模式下，药盒总重和数量由实际传感器读数决定，WPP已设置完成。<br>实时重量将自动更新，请确认药物数量已正确计算后点击下方按钮完成设置。</p>
+                                <p class="small-text mt-2" id="weighingRealModeInfoForInventory" style="display:none;">In real mode, the total weight and count of the pillbox are determined by actual sensor readings, and WPP has been set up correctly. <br>The real-time weight will automatically update, please confirm that the medication count has been calculated correctly before clicking the button below to complete the setup.</p>
                                 
                                 <div class="d-flex justify-content-between mt-3">
-                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(4)">返回</button>
+                                    <button class="btn btn-sm btn-outline-secondary" onclick="moveToWppStep(4)">Back</button>
                                 </div>
                             </div>
 
                             <!-- 步骤6: 完成设置 -->
                             <div id="wppStep6" class="wpp-step-content" style="display:none;">
-                                <h6 class="step-label">步骤6: 完成设置</h6>
+                                <h6 class="step-label">Step 6: Complete Setup</h6>
                                 <div class="alert alert-success">
-                                    <div><strong>药物名称:</strong> <span id="summaryMedName">-</span></div>
-                                    <div><strong>单片重量(WPP):</strong> <span id="summaryWPP">-</span>g</div>
-                                    <div><strong>总数量:</strong> <span id="summaryCount">-</span>片</div>
-                                    <div><strong>总重量:</strong> <span id="summaryTotalWeight">-</span>g</div>
+                                    <div><strong>Medication Name:</strong> <span id="summaryMedName">-</span></div>
+                                    <div><strong>Single Pill Weight (WPP):</strong> <span id="summaryWPP">-</span>g</div>
+                                    <div><strong>Total Count:</strong> <span id="summaryCount">-</span> pills</div>
+                                    <div><strong>Total Weight:</strong> <span id="summaryTotalWeight">-</span>g</div>
                                 </div>
                                 <div class="d-flex justify-content-between mt-3">
-                                    <button class="btn btn-sm btn-outline-primary" onclick="startNewMedicationSetup()">继续添加其他药物</button>
-                                    <button class="btn btn-sm btn-success" onclick="completeAllMedicationSetup()">完成所有药物设置</button>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="startNewMedicationSetup()">Continue Adding Other Medications</button>
+                                    <button class="btn btn-sm btn-success" onclick="completeAllMedicationSetup()">Complete All Medication Setup</button>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                <p class="small-text mt-1" id="wppSettingNoActiveMedInfo">请先从上方列表中选择一个药物作为当前操作对象。</p>
+                <p class="small-text mt-1" id="wppSettingNoActiveMedInfo">Please select a medication from the list above to operate on.</p>
             </div>
         </div>
         
         <div id="stageMedicationContent" class="section card">
-             <div class="card-header bg-light text-dark">阶段: 服药 (PC 操作药物: <span class="current-active-med-name-stage text-primary">未选药物</span>)</div>
+             <div class="card-header bg-light text-dark">Stage: Medication (PC-Operated Medication: <span class="current-active-med-name-stage text-primary">No Medication Selected</span>)</div>
             <div class="card-body">
                 <div id="medicationStageActiveMedControls" style="display:none;">
-                    <p class="small-text">Arduino当前认为选中药物是 "<span id="medStageArduinoMedName" class="text-info">N/A</span>", 其估算数量: <strong id="medStageArduinoMedCount" class="text-info">0</strong></p>
+                    <p class="small-text">Arduino currently believes the selected medication is "<span id="medStageArduinoMedName" class="text-info">N/A</span>", with an estimated count: <strong id="medStageArduinoMedCount" class="text-info">0</strong></p>
                     
                     <!-- 顺序服药流程界面 -->
                     <div class="card bg-light mb-3">
                         <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0">顺序服药流程 - 精确记录服药量</h6>
+                            <h6 class="mb-0">Sequential Medication Process - Precise Record of Medication Consumption</h6>
                         </div>
                         <div class="card-body">
                             <div id="medicationSessionStatus" class="alert alert-secondary" style="display:none;">
@@ -530,63 +531,63 @@
                             
                             <!-- 步骤1: 开始服药会话 -->
                             <div id="medicationStep1" class="step-content">
-                                <h6 class="step-label">步骤1: 选择药物并开始服药会话</h6>
-                                <p class="small-text mb-2">选择您要服用的药物，系统将记录初始重量</p>
+                                <h6 class="step-label">Step 1: Select a medication and start the medication session</h6>
+                                <p class="small-text mb-2">Select the medication you want to take; the system will record the initial weight</p>
                                 <div class="row g-2 mb-3">
                                     <div class="col">
                                         <select id="medicationToTakeSelect" class="form-select form-select-sm">
-                                            <option value="" disabled selected>选择药物...</option>
+                                            <option value="" disabled selected>Select medication...</option>
                                             <!-- 药物选项会通过JS动态填充 -->
                                         </select>
                                     </div>
                                     <div class="col-auto">
-                                        <button id="startMedicationSessionBtn" class="btn btn-primary btn-sm" onclick="startMedicationSession()">开始服药会话</button>
+                                        <button id="startMedicationSessionBtn" class="btn btn-primary btn-sm" onclick="startMedicationSession()">Start Medication Session</button>
                                     </div>
                                 </div>
                             </div>
                             
                             <!-- 步骤2: 解锁药格取药 -->
                             <div id="medicationStep2" class="step-content" style="display:none;">
-                                <h6 class="step-label">步骤2: 解锁药格并取药</h6>
+                                <h6 class="step-label">Step 2: Unlock Compartment and Take Medication</h6>
                                 <div class="d-flex align-items-center mb-2">
-                                    <span class="me-2">当前药物: </span>
-                                    <span id="currentSessionMedName" class="badge bg-info me-2">未选择</span>
-                                    <span class="me-2">初始重量: </span>
+                                    <span class="me-2">Current Medication: </span>
+                                    <span id="currentSessionMedName" class="badge bg-info me-2">None Selected</span>
+                                    <span class="me-2">Initial Weight: </span>
                                     <span id="sessionStartWeight" class="badge bg-secondary">0.00g</span>
                                 </div>
-                                <p class="small-text mb-2">点击下方按钮解锁药格，然后取出所需药物</p>
+                                <p class="small-text mb-2">Click the button below to unlock the compartment, then remove the required medication</p>
                                 <div class="d-flex mb-3">
-                                    <button id="unlockCompartmentBtn" class="btn btn-warning btn-sm me-2" onclick="unlockMedicationCompartment()">解锁药格</button>
-                                    <button id="cancelSessionBtn" class="btn btn-outline-danger btn-sm" onclick="cancelMedicationSession()">取消会话</button>
+                                    <button id="unlockCompartmentBtn" class="btn btn-warning btn-sm me-2" onclick="unlockMedicationCompartment()">Unlock Compartment</button>
+                                    <button id="cancelSessionBtn" class="btn btn-outline-danger btn-sm" onclick="cancelMedicationSession()">Cancel Session</button>
                                 </div>
                             </div>
                             
                             <!-- 步骤3: 锁定药格并记录 -->
                             <div id="medicationStep3" class="step-content" style="display:none;">
-                                <h6 class="step-label">步骤3: 锁定药格并记录服药量</h6>
-                                <p class="small-text mb-2">完成取药后，点击下方按钮锁定药格并自动记录服药量</p>
+                                <h6 class="step-label">Step 3: Lock Compartment and Record Medication Consumption</h6>
+                                <p class="small-text mb-2">After removing medication, click the button below to lock the compartment and automatically record consumption</p>
                                 <!-- 新增：测量减少重量并计算服用数量 -->
                                 <div class="mb-3 d-flex align-items-center">
-                                    <button id="measureConsumptionBtn" class="btn btn-outline-primary btn-sm me-2" onclick="measureConsumption()">测量减少重量</button>
+                                    <button id="measureConsumptionBtn" class="btn btn-outline-primary btn-sm me-2" onclick="measureConsumption()">Measure Weight Reduction</button>
                                     <div>
-                                        <span>减少重量: <strong id="measuredWeightReduced">-</strong> g</span>
-                                        <span class="ms-3">服用数量: <strong id="measuredPillCount">-</strong> 片</span>
+                                        <span>Weight Reduced: <strong id="measuredWeightReduced">-</strong> g</span>
+                                        <span class="ms-3">Pills Consumed: <strong id="measuredPillCount">-</strong> pills</span>
                                     </div>
                                 </div>
                                 <div class="d-flex mb-3">
-                                    <button id="lockAndRecordBtn" class="btn btn-success btn-sm" onclick="lockAndRecordConsumption()">完成服药并记录</button>
+                                    <button id="lockAndRecordBtn" class="btn btn-success btn-sm" onclick="lockAndRecordConsumption()">Complete Medication and Record</button>
                                 </div>
 
                                 <!-- 传统服药方式 -->
                                 <div class="mt-4">
-                                    <h6 class="section-title">传统服药方式</h6>
+                                    <h6 class="section-title">Traditional Medication Method</h6>
                                     <ul class="nav nav-pills mb-3 nav-fill" id="simConsumeModeTab" role="tablist">
                                         <!-- 隐藏按数量服用选项 -->
                                         <li class="nav-item" style="display:none;" role="presentation">
-                                            <button class="nav-link" id="consume-manual-count-tab" data-bs-toggle="pill" data-bs-target="#consume-manual-count-pane" type="button" role="tab" aria-controls="consume-manual-count-pane" aria-selected="false">按数量服用</button>
+                                            <button class="nav-link" id="consume-manual-count-tab" data-bs-toggle="pill" data-bs-target="#consume-manual-count-pane" type="button" role="tab" aria-controls="consume-manual-count-pane" aria-selected="false">Consume by Count</button>
                                         </li>
                                         <li class="nav-item" role="presentation" id="consumeByWeightTabItem">
-                                            <button class="nav-link" id="consume-sim-weight-tab" data-bs-toggle="pill" data-bs-target="#consume-sim-weight-pane" type="button" role="tab" aria-controls="consume-sim-weight-pane" aria-selected="false" onclick="showTab('consume-sim-weight-pane', this)">按重量减少 (模拟)</button>
+                                            <button class="nav-link" id="consume-sim-weight-tab" data-bs-toggle="pill" data-bs-target="#consume-sim-weight-pane" type="button" role="tab" aria-controls="consume-sim-weight-pane" aria-selected="false" onclick="showTab('consume-sim-weight-pane', this)">Consume by Weight (Simulated)</button>
                                         </li>
                                     </ul>
                                     
@@ -596,7 +597,7 @@
                                         <div class="tab-pane fade" id="consume-sim-weight-pane" role="tabpanel" aria-labelledby="consume-sim-weight-tab">
                                             <div class="input-group mb-3">
                                                 <input type="number" step="0.01" id="weightToReduceInput" class="form-control form-control-sm" placeholder="输入减少的重量 (g)" min="0.01">
-                                                <button class="btn btn-info btn-sm" onclick="consumePillsBySimulatedWeight()">确认服用 (按重量)</button>
+                                                <button class="btn btn-info btn-sm" onclick="consumePillsBySimulatedWeight()">Confirm Consumption (by Weight)</button>
                                             </div>
                                         </div>
                                     </div>
@@ -605,37 +606,37 @@
                             
                             <!-- 服药结果显示 -->
                             <div id="medicationResult" class="mt-3 p-3 border rounded" style="display:none;">
-                                <h6>服药记录:</h6>
+                                <h6>Medication Records:</h6>
                                 <div class="row g-2">
                                     <div class="col-md-6">
-                                        <div class="mb-1"><strong>药物:</strong> <span id="resultMedName">-</span></div>
-                                        <div class="mb-1"><strong>服用数量:</strong> <span id="resultPillCount">-</span> 片</div>
+                                        <div class="mb-1"><strong>Medication:</strong> <span id="resultMedName">-</span></div>
+                                        <div class="mb-1"><strong>Pills Consumed:</strong> <span id="resultPillCount">-</span> pills</div>
                                     </div>
                                     <div class="col-md-6">
-                                        <div class="mb-1"><strong>初始重量:</strong> <span id="resultStartWeight">-</span>g</div>
-                                        <div class="mb-1"><strong>减少重量:</strong> <span id="resultWeightReduced">-</span>g</div>
+                                        <div class="mb-1"><strong>Initial Weight:</strong> <span id="resultStartWeight">-</span>g</div>
+                                        <div class="mb-1"><strong>Weight Reduced:</strong> <span id="resultWeightReduced">-</span>g</div>
                                     </div>
                                 </div>
-                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="resetMedicationUI()">开始新服药</button>
+                                <button class="btn btn-sm btn-outline-primary mt-2" onclick="resetMedicationUI()">Start New Medication Session</button>
                             </div>
                         </div>
                     </div>
                     
                     <hr>
-                    <h6 class="section-title">本次服药记录</h6>
+                    <h6 class="section-title">Current Session Medication Records</h6>
                     <div id="consumptionLogThisSession" class="log-box" style="max-height: 100px;">
-                        <p class="small-text text-center">暂无服药记录</p>
+                        <p class="small-text text-center">No medication records yet</p>
                     </div>
                 </div>
-                 <p class="small-text mt-1" id="medicationStageNoActiveMedInfo">请先从"药物管理"部分选择要操作的药物。</p>
+                 <p class="small-text mt-1" id="medicationStageNoActiveMedInfo">Please select a medication to operate on from the Medication Management section.</p>
             </div>
         </div>
         <div id="stageResetContent" class="section card">
-            <div class="card-header bg-light text-dark">阶段: 重置中</div>
-            <div class="card-body"><p>系统正在重置... Arduino 将清除其重量和药物状态。</p></div>
+            <div class="card-header bg-light text-dark">Stage: Resetting</div>
+            <div class="card-body"><p>System is resetting... Arduino will clear its weight and medication state.</p></div>
         </div>
         
-        <div class="card"><div class="card-header">操作日志 (全局)</div><div class="card-body"><div id="logBox" class="log-box"></div></div></div>
+        <div class="card"><div class="card-header">Operation Log (Global)</div><div class="card-body"><div id="logBox" class="log-box"></div></div></div>
     </div>
 
 <script>
@@ -742,7 +743,7 @@
                 if (window.fetchStatusErrorCount > 5) {
                 const connStatusEl = document.getElementById('connectionStatus');
                 if(connStatusEl) {
-                        connStatusEl.textContent = '连接丢失';
+                        connStatusEl.textContent = 'Disconnected';
                     connStatusEl.className = 'status-disconnected';
                 }
                     
@@ -769,7 +770,7 @@
 
     function sendCommand(endpoint, body = {}, method = 'POST', successMessagePrefix = '操作') {
         console.log(`Sending command to ${endpoint} with body:`, body);
-        addLog(`发送请求到 ${endpoint}...`, "info");
+        addLog(`Sending request to ${endpoint}...`, "info");
         return fetch(endpoint, {
             method: method,
             headers: { 'Content-Type': 'application/json' },
@@ -822,12 +823,12 @@
     // --- Global Control ---
     function setMode(modeName) { 
         console.log("setMode called with:", modeName); 
-        addLog(`正在切换到${modeName === 'simulation' ? '模拟' : '真实'}模式...`, "info");
+        addLog(`Switching to ${modeName === 'simulation' ? 'Simulation' : 'Real'} Mode...`, "info");
         
         // 立即更新UI样式，提供即时反馈
         const modeIndicator = document.getElementById('modeIndicator');
         if (modeIndicator) {
-            modeIndicator.textContent = modeName === 'simulation' ? '模拟模式' : '真实模式';
+            modeIndicator.textContent = modeName === 'simulation' ? 'Simulation Mode' : 'Real Mode';
             modeIndicator.className = `mode-indicator mode-${modeName}`;
         }
         
@@ -843,7 +844,7 @@
             addLog("正在重置系统...", "warn");
         }
         
-        sendCommand(`/set_stage/${stageId}`, {}, 'POST', `切换阶段到 ID ${stageId}`)
+        sendCommand(`/set_stage/${stageId}`, {}, 'POST', `Switching to Stage ID ${stageId}`)
             .then(data => {
                 if(data.status === 'success') {
                     if(stageId === 1) { 
@@ -865,12 +866,12 @@
                         // 清空药物表格
                         const pcManagedTableBody = document.getElementById('pcManagedMedicationsTable');
                         if(pcManagedTableBody) {
-                            pcManagedTableBody.innerHTML = '<tr><td colspan="4" class="text-center small-text">PC端无已定义药物</td></tr>';
+                            pcManagedTableBody.innerHTML = '<tr><td colspan="4" class="text-center small-text">No medications defined on PC</td></tr>';
                         }
                         
                         const knownMedsClickableTable = document.getElementById('knownMedicationsClickableTableBody');
                         if(knownMedsClickableTable) {
-                            knownMedsClickableTable.innerHTML = '<tr><td colspan="4" class="text-center small-text">请先添加药物</td></tr>';
+                            knownMedsClickableTable.innerHTML = '<tr><td colspan="4" class="text-center small-text">Please add a medication first</td></tr>';
                         }
                         
                         addLog("系统已完全重置，所有数据已清除", "success");
@@ -1378,7 +1379,7 @@
             window.step3WeightUpdateInterval = null;
         }
         
-        addLog(`WPP测量：进入步骤${stepNumber}${mode ? ` (${mode === 'simulated' ? '模拟' : '真实'}模式)` : ''}`, "info");
+        addLog(`WPP Measurement: Enter Step ${stepNumber}${mode ? ` (${mode === 'simulated' ? 'Simulated' : 'Real'} Mode)` : ''}`, "info");
     }
 
     // 添加实时重量测量函数
@@ -1664,27 +1665,27 @@
             const connStatusEl = document.getElementById('connectionStatus');
             const arduinoStage = arduinoRawStateGlobal.stage_name || 'Unknown';
             if (connStatusEl) {
-                connStatusEl.textContent = (arduinoStage === 'Disconnected' || arduinoStage === 'Initializing' || arduinoStage === 'Unknown') ? arduinoStage : '已连接';
+                connStatusEl.textContent = (arduinoStage === 'Disconnected' || arduinoStage === 'Initializing' || arduinoStage === 'Unknown') ? arduinoStage : 'Connected';
                 connStatusEl.className = (arduinoStage === 'Disconnected' || arduinoStage === 'Initializing' || arduinoStage === 'Unknown') ? 'status-disconnected' : 'status-connected';
             }
             
             currentIsSimulationGlobal = data.is_simulation;
             const modeIndicator = document.getElementById('modeIndicator');
             if (modeIndicator) {
-                modeIndicator.textContent = currentIsSimulationGlobal ? '模拟模式' : '真实模式';
+                modeIndicator.textContent = currentIsSimulationGlobal ? 'Simulation Mode' : 'Real Mode';
                 modeIndicator.className = `mode-indicator mode-${currentIsSimulationGlobal ? 'simulation' : 'real'}`;
             }
             // 更新盖子状态指示
             const lidIndicator = document.getElementById('lidIndicator');
             if (lidIndicator) {
                 const open = arduinoRawStateGlobal.lid_open;
-                lidIndicator.textContent = open ? '开启' : '关闭';
+                lidIndicator.textContent = open ? 'Open' : 'Closed';
                 lidIndicator.className = `lid-indicator lid-${open ? 'open' : 'closed'}`;
             }
             // 新增：检测盖子开合状态变化并记录日志
             if (typeof lastLidOpenState === 'boolean') {
                 if (arduinoRawStateGlobal.lid_open !== lastLidOpenState) {
-                    addLog(arduinoRawStateGlobal.lid_open ? '药盒盖子已打开' : '警告：药盒盖子已关闭', arduinoRawStateGlobal.lid_open ? 'success' : 'warn');
+                    addLog(arduinoRawStateGlobal.lid_open ? 'Pillbox lid opened' : 'Pillbox lid closed', arduinoRawStateGlobal.lid_open ? 'success' : 'warn');
                 }
             }
             lastLidOpenState = arduinoRawStateGlobal.lid_open;
@@ -1709,17 +1710,17 @@
             
             pcActiveMedicationNameGlobal = data.pc_active_medication_name;
             const pcActiveMedDisplayEl = document.getElementById('pcActiveMedicationDisplay');
-            if (pcActiveMedDisplayEl) pcActiveMedDisplayEl.textContent = pcActiveMedicationNameGlobal || '无';
+            if (pcActiveMedDisplayEl) pcActiveMedDisplayEl.textContent = pcActiveMedicationNameGlobal || 'None';
             
-            document.querySelectorAll('.current-active-med-name-stage').forEach(el => el.textContent = pcActiveMedicationNameGlobal || '未选药物');
-            document.querySelectorAll('.current-active-med-name-wpp').forEach(el => el.textContent = pcActiveMedicationNameGlobal || '未选药物');
+            document.querySelectorAll('.current-active-med-name-stage').forEach(el => el.textContent = pcActiveMedicationNameGlobal || 'No Medication Selected');
+            document.querySelectorAll('.current-active-med-name-wpp').forEach(el => el.textContent = pcActiveMedicationNameGlobal || 'No Medication Selected');
             
             const pcManagedMeds = data.pc_managed_medication_details || {};
             const pcManagedTableBody = document.getElementById('pcManagedMedicationsTable');
             if (pcManagedTableBody) {
                 pcManagedTableBody.innerHTML = '';
                 if (Object.keys(pcManagedMeds).length === 0) {
-                    pcManagedTableBody.innerHTML = '<tr><td colspan="4" class="text-center small-text">PC端无已定义药物</td></tr>';
+                    pcManagedTableBody.innerHTML = '<tr><td colspan="4" class="text-center small-text">No medications defined on PC</td></tr>';
                 } else {
                     for (const medName in pcManagedMeds) {
                         const details = pcManagedMeds[medName];
@@ -1740,14 +1741,14 @@
             if (knownMedsClickableTable) {
                 knownMedsClickableTable.innerHTML = '';
                  if (Object.keys(pcManagedMeds).length === 0) {
-                    knownMedsClickableTable.innerHTML = '<tr><td colspan="4" class="text-center small-text">请先添加药物</td></tr>';
+                    knownMedsClickableTable.innerHTML = '<tr><td colspan="4" class="text-center small-text">Please add a medication first</td></tr>';
                 } else {
                     for (const medName in pcManagedMeds) {
                         const details = pcManagedMeds[medName];
                         const tr = document.createElement('tr');
                         if (medName === pcActiveMedicationNameGlobal) tr.classList.add('table-active');
                         tr.innerHTML = `
-                            <td style="cursor:pointer;" onclick="setPcActiveMedication('${medName}')" title="点击设为当前操作药物">${medName} ${medName === pcActiveMedicationNameGlobal ? '<span class="badge bg-primary ms-1">活动</span>' : ''}</td>
+                            <td style="cursor:pointer;" onclick="setPcActiveMedication('${medName}')">${medName} ${medName === pcActiveMedicationNameGlobal ? '<span class="badge bg-primary ms-1">Active</span>' : ''}</td>
                             <td>${parseFloat(details.wpp).toFixed(3)}</td>
                             <td>${parseFloat(details.total_weight_in_box).toFixed(2)}</td>
                             <td>${parseInt(details.count_in_box)}</td>
@@ -1924,7 +1925,7 @@
     
     document.addEventListener('DOMContentLoaded', function() {
         console.log("DOMContentLoaded: Script starting.");
-        addLog("智能药盒控制器界面 V6_fix_4 已加载。");
+        addLog("Smart Pillbox Controller V6_fix_4 loaded.");
         
         // 初始化WPP步骤UI
         moveToWppStep(1);

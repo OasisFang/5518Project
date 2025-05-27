@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medication Reminder Calendar</title>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Microsoft YaHei', Arial, sans-serif; padding:20px; }
+        #reminder-form { margin-bottom:20px; }
+        #reminder-form input, #reminder-form select { margin-right:10px; padding:5px; }
+        #calendar { max-width:900px; margin:0 auto; }
+    </style>
+</head>
+<body>
+    <h1>Set Medication Reminders</h1>
+    <form id="reminder-form">
+        <input type="text" id="rem-med-name" placeholder="Medication Name" required />
+        <input type="datetime-local" id="rem-start" required />
+        <input type="datetime-local" id="rem-end" required />
+        <select id="rem-type">
+            <option value="interval">Every X Hours</option>
+            <option value="daily">Daily Times</option>
+        </select>
+        <input type="number" id="rem-value" placeholder="Value" min="1" required />
+        <button type="button" onclick="addReminder()">Add Reminder</button>
+    </form>
+    <div id="calendar"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <script>
+        function fetchEvents(fetchInfo, successCallback) {
+            Promise.all([
+                fetch('/api/reminders').then(r=>r.json()),
+                fetch('/api/history').then(r=>r.json())
+            ]).then(([rems, hist])=>{
+                const events = [];
+                rems.forEach(r=>{
+                    const sd = new Date(r.start_datetime*1000);
+                    const ed = new Date(r.end_datetime*1000);
+                    if (r.frequency_type === 'interval') {
+                        let cur = new Date(r.start_datetime*1000);
+                        while (cur <= ed) {
+                            events.push({ title: `Reminder: ${r.medication_name}`, start: cur.toISOString(), color: 'red' });
+                            cur.setHours(cur.getHours()+r.frequency_value);
+                        }
+                    } else {
+                        // 每日次数，均匀分布
+                        for (let d=new Date(sd); d<=ed; d.setDate(d.getDate()+1)){
+                            const times = r.frequency_value;
+                            const interval = 24 / times;
+                            for (let i=0;i<times;i++){
+                                const dt = new Date(d);
+                                dt.setHours(Math.floor(i*interval),0,0);
+                                events.push({ title: `Reminder: ${r.medication_name}`, start: dt.toISOString(), color: 'red' });
+                            }
+                        }
+                    }
+                });
+                hist.forEach(h=>{
+                    const dt = new Date(h.timestamp*1000);
+                    events.push({ title: `${h.medication_name} x${h.pills_consumed}`, start: dt.toISOString(), color: 'blue' });
+                });
+                successCallback(events);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                events: fetchEvents
+            });
+            calendar.render();
+        });
+
+        function addReminder() {
+            const name = document.getElementById('rem-med-name').value;
+            const sd = new Date(document.getElementById('rem-start').value).getTime()/1000;
+            const ed = new Date(document.getElementById('rem-end').value).getTime()/1000;
+            const type = document.getElementById('rem-type').value;
+            const val = parseFloat(document.getElementById('rem-value').value);
+            fetch('/api/reminders', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({ medication_name:name, start_datetime:sd, end_datetime:ed, frequency_type:type, frequency_value:val })
+            }).then(res=>res.json()).then(data=>{
+                if (data.status==='success') location.reload();
+                else alert('Add failed: '+data.message);
+            });
+        }
+    </script>
+</body>
+</html> 
