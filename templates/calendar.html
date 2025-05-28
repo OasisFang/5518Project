@@ -25,6 +25,10 @@
         <input type="number" id="rem-value" placeholder="Value" min="1" required />
         <button type="button" onclick="addReminder()">Add Reminder</button>
     </form>
+    <div style="margin-bottom:20px;">
+        <button id="btn-play-reminder">Play Reminder</button>
+        <button id="btn-show-next">Show Next Med Time</button>
+    </div>
     <div id="calendar"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
@@ -102,6 +106,30 @@
                 else alert('Add failed: '+data.message);
             });
         }
+
+        // Play reminder music on Arduino
+        document.getElementById('btn-play-reminder').addEventListener('click', function(){
+            fetch('/play_reminder', {method:'POST'});
+        });
+        // Show next medication time on Arduino LCD
+        document.getElementById('btn-show-next').addEventListener('click', function(){
+            const now = new Date();
+            let next = new Date();
+            next.setHours(12,0,0,0);
+            if (now > next) next.setDate(next.getDate()+1);
+            const diffMs = next - now;
+            const diffH = Math.floor(diffMs/3600000);
+            const diffM = Math.floor((diffMs % 3600000)/60000);
+            const diffStr = ("0"+diffH).slice(-2) + ":" + ("0"+diffM).slice(-2);
+            fetch('/lcd_next', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({diff: diffStr})
+            });
+            setTimeout(function(){
+                fetch('/lcd_taken', {method:'POST'});
+            }, 5000);
+        });
     </script>
 </body>
 </html> 

@@ -252,7 +252,7 @@
             </div>
             <div class="col-md-7">
                 <div class="card">
-                    <div class="card-header">PC-Managed Medication Status (<span id="pcActiveMedicationDisplay" class="text-warning">Current: None</span>)</div>
+                    <div class="card-header">Managed Medication Status (<span id="pcActiveMedicationDisplay" class="text-warning">Current: None</span>)</div>
                     <div class="card-body">
                         <!-- Add new medication input section -->
                         <div class="row g-3 align-items-end mb-3">
@@ -261,7 +261,7 @@
                                 <input type="text" id="newMedNameInput" class="form-control form-control-sm" placeholder="Enter medication name">
                             </div>
                             <div class="col-md-auto">
-                                <button class="btn btn-success btn-sm w-100" onclick="addOrUpdateKnownMedication()">Add to PC List</button>
+                                <button class="btn btn-success btn-sm w-100" onclick="addOrUpdateKnownMedication()">Add to Medication List</button>
                             </div>
                         </div>
                         <div style="max-height: 200px; overflow-y: auto;">
@@ -276,13 +276,13 @@
         </div>
         
         <div id="medicationManagementCard" class="card">
-            <div class="card-header">Medication Management (PC-Defined Medication List)</div>
+            <div class="card-header">Medication Management (Defined Medication List)</div>
             <div class="card-body">
                 <!-- Step 1: Add or Select Medication -->
                 <div id="wppStep1" class="wpp-step-content">
                     <h6 class="step-label">Step 1: Add or Select Medication</h6>
                     <hr>
-                    <h6 class="section-title">PC Known Medication List (Click Name to Set as Current Medication)</h6>
+                    <h6 class="section-title">Pillbox Known Medication List (Click Name to Set as Current Medication)</h6>
                     <table class="table table-hover table-sm mb-3">
                         <thead><tr><th>Medication Name (Set Active)</th><th>WPP (g)</th><th>Total Weight (g)</th><th>Estimated Count</th></tr></thead>
                         <tbody id="knownMedicationsClickableTableBody"></tbody>
@@ -318,8 +318,8 @@
                                 <h6 class="step-label">Step 2: Select Measurement Mode</h6>
                                 <p class="small-text mb-2">Choose an appropriate setting for WPP measurement of single pill weight</p>
                                 <div class="d-flex mb-3">
-                                    <button class="btn btn-outline-primary me-2" onclick="moveToWppStep(3, 'simulated')">Simulated Environment: Manual Input of Single Pill Weight</button>
-                                    <button class="btn btn-outline-success" onclick="moveToWppStep(3, 'real')">Real/Simulated Environment: Measure Single Pill Weight</button>
+                                    <button class="btn btn-outline-primary me-2" onclick="moveToWppStep(3, 'simulated')">Manual Input of Single Pill Weight</button>
+                                    <button class="btn btn-outline-success" onclick="moveToWppStep(3, 'real')">Measure Single Pill by Weight</button>
                                 </div>
                             </div>
                             
@@ -506,7 +506,7 @@
         </div>
         
         <div id="stageMedicationContent" class="section card">
-             <div class="card-header bg-light text-dark">Stage: Medication (PC-Operated Medication: <span class="current-active-med-name-stage text-primary">No Medication Selected</span>)</div>
+             <div class="card-header bg-light text-dark">Stage: Medication (Operated Medication: <span class="current-active-med-name-stage text-primary">No Medication Selected</span>)</div>
             <div class="card-body">
                 <div id="medicationStageActiveMedControls" style="display:none;">
                     <p class="small-text">Arduino currently believes the selected medication is "<span id="medStageArduinoMedName" class="text-info">N/A</span>", with an estimated count: <strong id="medStageArduinoMedCount" class="text-info">0</strong></p>

@@ -991,6 +991,26 @@ def delete_all():
 def calendar_page():
     return render_template('calendar.html')
 
+# Route to play reminder music on Arduino
+@app.route('/play_reminder', methods=['POST'])
+def play_reminder():
+    send_to_arduino_command("PLAY_REMINDER")
+    return jsonify({"status":"success","message":"Reminder music played."})
+
+# Route to display next medication time on LCD
+@app.route('/lcd_next', methods=['POST'])
+def lcd_next():
+    data = request.json or {}
+    diff = data.get('diff', '00:00')
+    send_to_arduino_command(f"LCD:NEXT:{diff}")
+    return jsonify({"status":"success","message":f"Displayed next med time: {diff}."})
+
+# Route to reset LCD display to default PharmaPlan
+@app.route('/lcd_taken', methods=['POST'])
+def lcd_taken():
+    send_to_arduino_command("LCD:TAKEN")
+    return jsonify({"status":"success","message":"Display reset to default."})
+
 # --- app.py end ---
 if __name__ == '__main__':
     logger.info("Starting Flask Pillbox Controller.")

@@ -2,6 +2,7 @@
 #include <Ultrasonic.h>  // Include ultrasonic library
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
 
 // SimulatedPillbox.ino (与V5/V6版本一致)
 // 模拟参数和状态
@@ -53,8 +54,25 @@ bool showMissed = false;              // flag indicating missed display
 char nextMedicationTime[6] = "";      // HH:MM format or current time
 bool hasNextTime = false;             // flag indicating next medication time is set
 
+// MP3 module serial on pins 10 (RX) and 11 (TX)
+SoftwareSerial mp3Serial(10, 11);
+
+// Function to play a track on MP3 module
+void playTrack(unsigned char track) {
+  unsigned char playCmd[6] = {0xAA, 0x07, 0x02, 0x00, track, (unsigned char)(track + 0xB3)};
+  mp3Serial.write(playCmd, 6);
+}
+// Function to set volume on MP3 module
+void setVolume(unsigned char vol) {
+  unsigned char volCmd[5] = {0xAA, 0x13, 0x01, vol, (unsigned char)(vol + 0xBE)};
+  mp3Serial.write(volCmd, 5);
+}
+
 void setup() {
   Serial.begin(9600);
+  // Initialize MP3 module serial and set volume
+  mp3Serial.begin(9600);
+  setVolume(0x06);
   
   // Initialize I2C LCD
   Wire.begin();
@@ -470,6 +488,11 @@ void processCommand(const char* command) {
     lcd.print("PharmaPlan");
     lcd.setCursor(0,1);
     lcd.print(nextMedicationTime);
+  }
+  else if (commandStartsWith(command, "PLAY_REMINDER")) {
+    // Play reminder music for 3 seconds
+    playTrack(0x02);
+    delay(3000);
   }
 
   sendDataToPC(); // 发送更新后的状态到PC
