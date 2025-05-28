@@ -149,7 +149,7 @@ def read_from_arduino_thread_function():
                     arduino_raw_state["last_update"] = time.time()
                     arduino_raw_state["raw_data"] = line
                 if line.startswith("DATA:"): 
-                    logger.info(f"Received DATA line: {line}")
+                    logger.debug(f"Received DATA line: {line}")
                     parts = line[5:].split(',')
                     if len(parts) >= 5: 
                         with data_lock:
@@ -974,7 +974,19 @@ def add_reminder():
     conn.commit()
     return jsonify({'status':'success','id': cursor.lastrowid})
 
-# Add /calendar page
+# 新增 API: 删除所有历史、留言和提醒
+@app.route('/api/delete_all', methods=['POST'])
+def delete_all():
+    try:
+        cursor.execute('DELETE FROM history')
+        cursor.execute('DELETE FROM messages')
+        cursor.execute('DELETE FROM reminders')
+        conn.commit()
+        return jsonify({'status':'success','message':'All history, messages, and reminders deleted.'})
+    except Exception as e:
+        logger.error(f"Failed to delete all data: {e}")
+        return jsonify({'status':'error','message': str(e)}), 500
+
 @app.route('/calendar')
 def calendar_page():
     return render_template('calendar.html')

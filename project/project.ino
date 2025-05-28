@@ -57,6 +57,7 @@ void setup() {
   Serial.begin(9600);
   
   // Initialize I2C LCD
+  Wire.begin();
   lcd.init();
   lcd.backlight();
   

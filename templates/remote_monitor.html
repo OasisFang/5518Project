@@ -133,6 +133,7 @@
 </head>
 <body>
     <h1>Smart Medication System - Remote Monitoring</h1>
+    <button id="clear-all-btn" class="btn btn-danger" style="margin-bottom:20px;">Clear All History</button>
     
     <div class="container">
         <div class="panel history-panel">
@@ -392,6 +393,25 @@
                 calendar.render();
             };
             document.body.appendChild(script);
+        });
+
+        // Add clear all history, reminders, and messages button handler
+        document.getElementById('clear-all-btn').addEventListener('click', async function() {
+            if (!confirm("Are you sure you want to delete all history, reminders and messages?")) return;
+            try {
+                const response = await fetch('/api/delete_all', { method: 'POST' });
+                const result = await response.json();
+                if (response.ok && result.status === 'success') {
+                    alert('All data deleted successfully.');
+                    // Reload page to refresh data
+                    location.reload();
+                } else {
+                    alert('Failed to delete data: ' + (result.message || response.statusText));
+                }
+            } catch (error) {
+                console.error('Error deleting data:', error);
+                alert('Error deleting data.');
+            }
         });
     </script>
 </body>

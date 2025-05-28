@@ -650,6 +650,8 @@
     let lastLidOpenState = null; 
     // Added: Real-time medication weight reduction measurement timer
     let consumptionUpdateInterval = null;
+    // Flag to disable measurement logs after completion
+    window.disableMeasurementLogs = false;
 
     // Add explicit Tab switching function
     function showTab(tabPaneId, tabButton) {
@@ -1000,7 +1002,9 @@
                     const wpp = parseFloat(details.wpp) || 0;
                     const pillCount = wpp > 0 ? Math.round(weightReduced / wpp) : 0;
                     if (pillCountEl) pillCountEl.textContent = pillCount;
-                    addLog(`Measured weight reduction: ${weightReduced.toFixed(2)}g, estimated consumption: ${pillCount} pills`, 'info');
+                    if (!window.disableMeasurementLogs) {
+                        addLog(`Measured weight reduction: ${weightReduced.toFixed(2)}g, estimated consumption: ${pillCount} pills`, 'info');
+                    }
                 } else {
                     addLog('Failed to measure weight reduction: invalid data', 'error');
                 }
@@ -1012,6 +1016,8 @@
     }
 
     function lockAndRecordConsumption() {
+        // Disable measurement logs after completing medication
+        window.disableMeasurementLogs = true;
         // 在模拟模式下，直接使用模拟消费功能
         if (currentIsSimulationGlobal) {
             addLog("In simulation mode, using weight reduction function for medication", "info");
@@ -1698,6 +1704,10 @@
             
             const connStatusEl = document.getElementById('connectionStatus');
             const arduinoStage = arduinoRawStateGlobal.stage_name || 'Unknown';
+            // Automatically measure weight reduction in Medication stage
+            if (arduinoStage === 'Medication') {
+                measureConsumption();
+            }
             if (connStatusEl) {
                 connStatusEl.textContent = (arduinoStage === 'Disconnected' || arduinoStage === 'Initializing' || arduinoStage === 'Unknown') ? arduinoStage : 'Connected';
                 connStatusEl.className = (arduinoStage === 'Disconnected' || arduinoStage === 'Initializing' || arduinoStage === 'Unknown') ? 'status-disconnected' : 'status-connected';
