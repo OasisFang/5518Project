@@ -87,11 +87,11 @@
             updateWeightDisplay(data.weight, data.age);
             checkWeightStability(data.weight);
           } else {
-            showWeightError(data.message || "获取重量失败");
+            showWeightError(data.message || "Failed to read weight");
           }
         })
         .fail(function() {
-          showWeightError("无法连接到服务器");
+          showWeightError("Cannot Connect to Server");
         });
     }
     
@@ -112,7 +112,7 @@
           }
         })
         .fail(function(xhr) {
-          let errorMsg = "强制刷新失败";
+          let errorMsg = "Failed to force refresh";
           if (xhr.responseJSON && xhr.responseJSON.message) {
             errorMsg = xhr.responseJSON.message;
           }
@@ -170,17 +170,17 @@
         data: JSON.stringify({ count: pillCount }),
         success: function(data) {
           if (data.status === "success") {
-            showWeightSuccess(`已确认库存: ${pillCount}片 (${currentWeight.toFixed(3)}g)`);
+            showWeightSuccess(`In Stock: ${pillCount}tablets (${currentWeight.toFixed(3)}g)`);
             // 通知主应用更新状态
             if (typeof window.pillboxApp.onInventorySet === "function") {
               window.pillboxApp.onInventorySet(activeMed, pillCount, currentWeight);
             }
           } else {
-            showWeightError(data.message || "设置库存失败");
+            showWeightError(data.message || "Failed to set stock number");
           }
         },
         error: function() {
-          showWeightError("无法连接到服务器");
+          showWeightError("Cannot connect to server");
         },
         complete: function() {
           $("#confirmWeightBtn").prop("disabled", false).html('Confirm Weight and Pill Count');
@@ -195,11 +195,11 @@
       
       // 更新状态信息
       if (age < 1) {
-        $("#weightUpdateStatus").text("实时数据").removeClass("text-danger").addClass("text-success");
+        $("#weightUpdateStatus").text("Real time data").removeClass("text-danger").addClass("text-success");
       } else if (age < 5) {
-        $("#weightUpdateStatus").text(`${Math.round(age)}秒前更新`).removeClass("text-danger text-success");
+        $("#weightUpdateStatus").text(`${Math.round(age)}seconds before update`).removeClass("text-danger text-success");
       } else {
-        $("#weightUpdateStatus").text(`${Math.round(age)}秒前更新 - 数据可能已过期`).addClass("text-danger").removeClass("text-success");
+        $("#weightUpdateStatus").text(`${Math.round(age)}seconds before update, the data might have experied`).addClass("text-danger").removeClass("text-success");
       }
       
       // 更新药片计数
@@ -213,7 +213,7 @@
         const wpp = window.pillboxApp.getMedicationWpp(activeMed);
         $("#wppDisplay").text(`${wpp.toFixed(3)} g`);
       } else {
-        $("#wppDisplay").text("未设置");
+        $("#wppDisplay").text("Have not set up");
       }
     }
     
@@ -239,11 +239,11 @@
             $("#pillCountProgressBar").removeClass("bg-success bg-warning").addClass("bg-danger");
           }
         } else {
-          $("#pillCountDisplay").text("无法计算 (WPP无效)");
+          $("#pillCountDisplay").text("Cannot calculate (WPP undefined)");
           $("#pillCountProgressBar").css("width", "0%").attr("aria-valuenow", 0);
         }
       } else {
-        $("#pillCountDisplay").text("请先选择药物");
+        $("#pillCountDisplay").text("Please choose medicine first");
         $("#pillCountProgressBar").css("width", "0%").attr("aria-valuenow", 0);
       }
     }
@@ -258,7 +258,7 @@
           // 重量已经稳定，可以提示用户确认
           $("#confirmWeightBtn").removeClass("btn-outline-success").addClass("btn-success").prop("disabled", false);
           if (currentWeight > 0.1) { // 只有重量有意义时才提示
-            showWeightSuccess("重量已稳定，可以确认");
+            showWeightSuccess("The weight is stable, please confirm");
           }
         }
       } else {

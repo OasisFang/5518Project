@@ -204,7 +204,7 @@
         .step-label { font-weight: 500; color: #333; display: block; margin-bottom: 0.3rem;}
         .consumption-log-entry { font-size: 0.9em; padding: 0.25rem 0.5rem; border-bottom: 1px dashed #eee; }
         .consumption-log-entry:last-child { border-bottom: none; }
-        /* 盖子开合指示 */
+        /* Lid Open/Close Indicator */
         .lid-indicator { display: inline-block; padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-size: 0.9rem; }
         .lid-open { background-color: #d4edda; color: #155724; }
         .lid-closed { background-color: #f8d7da; color: #721c24; }
@@ -254,7 +254,7 @@
                 <div class="card">
                     <div class="card-header">PC-Managed Medication Status (<span id="pcActiveMedicationDisplay" class="text-warning">Current: None</span>)</div>
                     <div class="card-body">
-                        <!-- 添加新的药物输入区域 -->
+                        <!-- Add new medication input section -->
                         <div class="row g-3 align-items-end mb-3">
                             <div class="col-md-6">
                                 <label for="newMedNameInput" class="form-label form-label-sm">Add New Medication:</label>
@@ -278,7 +278,7 @@
         <div id="medicationManagementCard" class="card">
             <div class="card-header">Medication Management (PC-Defined Medication List)</div>
             <div class="card-body">
-                <!-- 步骤1: 添加或选择药物 -->
+                <!-- Step 1: Add or Select Medication -->
                 <div id="wppStep1" class="wpp-step-content">
                     <h6 class="step-label">Step 1: Add or Select Medication</h6>
                     <hr>
@@ -291,9 +291,9 @@
                         <button class="btn btn-primary btn-sm" onclick="moveToWppStep(2)">Next: Select Measurement Mode</button>
                     </div>
                 </div>
-                <!-- 只有选中药物后才显示后续步骤 -->
+                <!-- Only show subsequent steps after selecting a medication -->
                 <div id="wppSettingSectionForActiveMed" class="sub-section" style="display:none;"> 
-                    <!-- 步骤式WPP测量界面（步骤2~6） -->
+                    <!-- Step-by-Step WPP Measurement Interface (Steps 2-6) -->
                     <div class="card bg-light mb-3">
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0">Step-by-Step WPP Measurement</h6>
@@ -313,7 +313,7 @@
                                 <div id="wppStepCircle6" class="rounded-circle d-flex justify-content-center align-items-center ms-2" style="width:50px; height:50px; background-color:#6c757d; color:white; font-weight:bold;">6</div>
                             </div>
                             
-                            <!-- 步骤2: 选择测量模式 -->
+                            <!-- Step 2: Select Measurement Mode -->
                             <div id="wppStep2" class="wpp-step-content" style="display:none;">
                                 <h6 class="step-label">Step 2: Select Measurement Mode</h6>
                                 <p class="small-text mb-2">Choose an appropriate setting for WPP measurement of single pill weight</p>
@@ -323,7 +323,7 @@
                                 </div>
                             </div>
                             
-                            <!-- 步骤3: 模拟环境输入 -->
+                            <!-- Step 3: Simulated Environment Input -->
                             <div id="wppStep3-simulated" class="wpp-step-content" style="display:none;">
                                 <h6 class="step-label">Step 3: Input Single Pill Weight</h6>
                                 <div class="row g-2 align-items-end mb-3">
@@ -341,7 +341,7 @@
                                 </div>
                             </div>
                             
-                            <!-- 步骤3: 真实环境测量 -->
+                            <!-- Step 3: Real Environment Measurement -->
                             <div id="wppStep3-real" class="wpp-step-content" style="display:none;">
                                 <h6 class="step-label">Step 3: Prepare to Measure Single Pill Weight</h6>
                                 <p class="small-text">In real mode, WPP is set through actual sensor readings. In simulated mode, you can manually input simulated values.</p>
@@ -349,14 +349,14 @@
                                     <button class="btn btn-outline-secondary btn-sm mb-2" onclick="tareArduinoForMeasurement()">Prepare Measurement: Tare (Arduino Zero) the Pillbox</button>
                                     <p class="small-text mb-1">(Physical operation) Place '<span class="current-active-med-name-wpp text-primary"></span>'s <strong class="text-danger">single pill</strong> in the pillbox and wait for weight stabilization.</p>
                                     
-                                    <!-- 在真实模式下显示实时重量 -->
+                                    <!-- Display real-time weight in real mode -->
                                     <div id="realTimeWeightContainerInStep3" class="real-time-weight mt-3" style="display:none;">
                                         <strong>Real-Time Weight:</strong> <span id="realTimeWeightValueInStep3">0.00</span>g
                                         <div class="small-text text-muted">(From Arduino real-time data)</div>
                                         <button class="btn btn-sm btn-outline-warning mt-2" onclick="tareArduinoForMeasurement()">Sensor Tare/Zero</button>
                                     </div>
                                     
-                                    <!-- 添加模拟模式下的手动输入 -->
+                                    <!-- Add manual input for simulated mode -->
                                     <div id="simulatedWPPInputContainer" style="display:none;" class="mt-3">
                                         <div class="row g-2 align-items-end">
                                             <div class="col">
@@ -375,7 +375,7 @@
                                 </div>
                             </div>
                             
-                            <!-- 步骤4: 确认WPP -->
+                            <!-- Step 4: Confirm WPP -->
                             <div id="wppStep4" class="wpp-step-content" style="display:none;">
                                 <h6 class="step-label">Step 4: Confirm WPP Settings</h6>
                                 <p class="small-text mb-2">WPP has been set up correctly, please confirm the information is accurate</p>
@@ -393,12 +393,12 @@
                                 </div>
                             </div>
 
-                            <!-- 步骤5: 设置库存 -->
+                            <!-- Step 5: Set Inventory -->
                             <div id="wppStep5" class="wpp-step-content" style="display:none;">
                                 <h6 class="step-label">Step 5: Set Medication Inventory</h6>
                                 <p class="small-text mb-2">Set the number/total weight of '<span class="current-active-med-name-wpp text-primary"></span>' in the pillbox</p>
                                 
-                                <!-- 实时重量显示卡片 -->
+                                <!-- Real-time weight display card -->
                                 <div class="card mb-3" id="realTimeWeightCard">
                                     <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
                                         <h6 class="mb-0">Current Pillbox Real-Time Weight</h6>
@@ -430,7 +430,7 @@
                                         
                                         <div class="d-grid gap-2 mt-3">
                                             <button type="button" class="btn btn-success" id="confirmWeightBtnInStep5" onclick="confirmWeightAndSetInventory()">
-                                                确认重量和药片数量
+                                                Confirm Weight and Pill Count
                                             </button>
                                             <button type="button" class="btn btn-outline-secondary" id="tareWeightBtnInStep5" onclick="tareArduinoForMeasurement()">
                                                 <i class="fas fa-balance-scale"></i> Tare/Calibrate
@@ -484,7 +484,7 @@
                                 </div>
                             </div>
 
-                            <!-- 步骤6: 完成设置 -->
+                            <!-- Step 6: Complete Setup -->
                             <div id="wppStep6" class="wpp-step-content" style="display:none;">
                                 <h6 class="step-label">Step 6: Complete Setup</h6>
                                 <div class="alert alert-success">
@@ -511,14 +511,14 @@
                 <div id="medicationStageActiveMedControls" style="display:none;">
                     <p class="small-text">Arduino currently believes the selected medication is "<span id="medStageArduinoMedName" class="text-info">N/A</span>", with an estimated count: <strong id="medStageArduinoMedCount" class="text-info">0</strong></p>
                     
-                    <!-- 顺序服药流程界面 -->
+                    <!-- Sequential Medication Process - Precise Record of Medication Consumption -->
                     <div class="card bg-light mb-3">
                         <div class="card-header bg-primary text-white">
                             <h6 class="mb-0">Sequential Medication Process - Precise Record of Medication Consumption</h6>
                         </div>
                         <div class="card-body">
-                            <div id="medicationSessionStatus" class="alert alert-secondary" style="display:none;">
-                                药物服用会话状态: <span id="sessionStatusText">未开始</span>
+                            <p class="small-text" id="medicationSessionStatus" class="alert alert-secondary" style="display:none;">
+                                Medication Session Status: <span id="sessionStatusText">Not Started</span>
                             </div>
                             
                             <div class="d-flex justify-content-center align-items-center mb-3">
@@ -529,7 +529,7 @@
                                 <div id="stepCircle3" class="rounded-circle d-flex justify-content-center align-items-center ms-2" style="width:50px; height:50px; background-color:#6c757d; color:white; font-weight:bold;">3</div>
                             </div>
                             
-                            <!-- 步骤1: 开始服药会话 -->
+                            <!-- Step 1: Start Medication Session -->
                             <div id="medicationStep1" class="step-content">
                                 <h6 class="step-label">Step 1: Select a medication and start the medication session</h6>
                                 <p class="small-text mb-2">Select the medication you want to take; the system will record the initial weight</p>
@@ -537,7 +537,7 @@
                                     <div class="col">
                                         <select id="medicationToTakeSelect" class="form-select form-select-sm">
                                             <option value="" disabled selected>Select medication...</option>
-                                            <!-- 药物选项会通过JS动态填充 -->
+                                            <!-- Medication options will be populated dynamically via JS -->
                                         </select>
                                     </div>
                                     <div class="col-auto">
@@ -546,7 +546,7 @@
                                 </div>
                             </div>
                             
-                            <!-- 步骤2: 解锁药格取药 -->
+                            <!-- Step 2: Unlock Compartment and Take Medication -->
                             <div id="medicationStep2" class="step-content" style="display:none;">
                                 <h6 class="step-label">Step 2: Unlock Compartment and Take Medication</h6>
                                 <div class="d-flex align-items-center mb-2">
@@ -562,11 +562,11 @@
                                 </div>
                             </div>
                             
-                            <!-- 步骤3: 锁定药格并记录 -->
+                            <!-- Step 3: Lock Compartment and Record Medication Consumption -->
                             <div id="medicationStep3" class="step-content" style="display:none;">
                                 <h6 class="step-label">Step 3: Lock Compartment and Record Medication Consumption</h6>
                                 <p class="small-text mb-2">After removing medication, click the button below to lock the compartment and automatically record consumption</p>
-                                <!-- 新增：测量减少重量并计算服用数量 -->
+                                <!-- Added: Measure weight reduction and calculate consumption amount -->
                                 <div class="mb-3 d-flex align-items-center">
                                     <button id="measureConsumptionBtn" class="btn btn-outline-primary btn-sm me-2" onclick="measureConsumption()">Measure Weight Reduction</button>
                                     <div>
@@ -578,11 +578,11 @@
                                     <button id="lockAndRecordBtn" class="btn btn-success btn-sm" onclick="lockAndRecordConsumption()">Complete Medication and Record</button>
                                 </div>
 
-                                <!-- 传统服药方式 -->
+                                <!-- Traditional Medication Method -->
                                 <div class="mt-4">
                                     <h6 class="section-title">Traditional Medication Method</h6>
                                     <ul class="nav nav-pills mb-3 nav-fill" id="simConsumeModeTab" role="tablist">
-                                        <!-- 隐藏按数量服用选项 -->
+                                        <!-- Hidden: Consume by count option -->
                                         <li class="nav-item" style="display:none;" role="presentation">
                                             <button class="nav-link" id="consume-manual-count-tab" data-bs-toggle="pill" data-bs-target="#consume-manual-count-pane" type="button" role="tab" aria-controls="consume-manual-count-pane" aria-selected="false">Consume by Count</button>
                                         </li>
@@ -592,11 +592,11 @@
                                     </ul>
                                     
                                     <div class="tab-content">
-                                        <!-- 隐藏手动数量面板 -->
+                                        <!-- Hidden: Manual count panel -->
                                         <div class="tab-pane fade" id="consume-manual-count-pane" role="tabpanel" aria-labelledby="consume-manual-count-tab" style="display:none;"></div>
                                         <div class="tab-pane fade" id="consume-sim-weight-pane" role="tabpanel" aria-labelledby="consume-sim-weight-tab">
                                             <div class="input-group mb-3">
-                                                <input type="number" step="0.01" id="weightToReduceInput" class="form-control form-control-sm" placeholder="输入减少的重量 (g)" min="0.01">
+                                                <input type="number" step="0.01" id="weightToReduceInput" class="form-control form-control-sm" placeholder="Enter weight reduction (g)" min="0.01">
                                                 <button class="btn btn-info btn-sm" onclick="consumePillsBySimulatedWeight()">Confirm Consumption (by Weight)</button>
                                             </div>
                                         </div>
@@ -604,7 +604,7 @@
                                 </div>
                             </div>
                             
-                            <!-- 服药结果显示 -->
+                            <!-- Medication Result Display -->
                             <div id="medicationResult" class="mt-3 p-3 border rounded" style="display:none;">
                                 <h6>Medication Records:</h6>
                                 <div class="row g-2">
@@ -644,131 +644,165 @@
     let currentIsSimulationGlobal = true; 
     let pcActiveMedicationNameGlobal = null; 
     let arduinoRawStateGlobal = {}; 
-    let pc_managed_medication_details = {}; // 确保初始化这个全局变量
+    let pc_managed_medication_details = {}; // Ensure this global variable is initialized
     let consumptionLogEntries = []; 
-    // 新增：记录盖子开合状态，用于变动日志
+    // Added: Record lid open/close state for change logs
     let lastLidOpenState = null; 
-    // 新增：实时测量服药减少重量定时器
+    // Added: Real-time medication weight reduction measurement timer
     let consumptionUpdateInterval = null;
 
-    // 添加显式的Tab切换函数
+    // Add explicit Tab switching function
     function showTab(tabPaneId, tabButton) {
         console.log(`Showing tab: ${tabPaneId}`);
         
-        // 移除所有active类
+        // Remove all active classes
         const navPills = tabButton.closest('.nav-pills');
         navPills.querySelectorAll('.nav-link').forEach(el => {
             el.classList.remove('active');
             el.setAttribute('aria-selected', 'false');
         });
         
-        // 移除所有tab-pane的active类
+        // Remove all tab-pane active classes
         const tabContent = document.getElementById(tabButton.getAttribute('aria-controls')).closest('.tab-content');
         tabContent.querySelectorAll('.tab-pane').forEach(el => {
             el.classList.remove('show', 'active');
         });
         
-        // 添加active类到当前按钮和面板
+        // Add active class to current button and panel
         tabButton.classList.add('active');
         tabButton.setAttribute('aria-selected', 'true');
         
         const tabPane = document.getElementById(tabPaneId);
         if(tabPane) {
             tabPane.classList.add('show', 'active');
-            addLog(`切换到标签页: ${tabButton.textContent}`, "info");
+            addLog(`Switching to tab: ${tabButton.textContent}`, "info");
         }
     }
 
     // --- Utility Functions ---
     function addLog(message, type = 'info') {
-        console.log(`LOG [${type.toUpperCase()}]: ${message}`); 
-        const logBox = document.getElementById('logBox');
-        const time = new Date().toLocaleTimeString();
+        const logContainer = document.getElementById('logBox');
+        if (!logContainer) return;
+        
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString();
+        
         const logEntry = document.createElement('div');
-        logEntry.className = 'log-entry';
-        logEntry.innerHTML = `<strong>[${time}] ${type.toUpperCase()}:</strong> ${message}`;
-        if (type === 'error') logEntry.style.color = 'red';
-        if (type === 'success') logEntry.style.color = 'green';
-        if (type === 'warn') logEntry.style.color = '#fd7e14';
-        if(logBox) logBox.insertBefore(logEntry, logBox.firstChild);
-    }
-     function addConsumptionLogEntry(medName, count, weightReducedApprox = null) {
-        console.log(`CONSUMPTION: ${medName}, Count: ${count}, WeightReduced: ${weightReducedApprox}`);
-        const consumptionLogDiv = document.getElementById('consumptionLogThisSession');
-        if (consumptionLogEntries.length === 0 && consumptionLogDiv) { 
-            consumptionLogDiv.innerHTML = ''; 
+        logEntry.className = `log-entry log-${type}`;
+        logEntry.innerHTML = `
+            <span class="log-time">[${timeStr}]</span>
+            <span class="log-message">${message}</span>
+        `;
+        
+        logContainer.insertBefore(logEntry, logContainer.firstChild);
+        
+        // Keep only the latest 100 entries
+        while (logContainer.children.length > 100) {
+            logContainer.removeChild(logContainer.lastChild);
         }
-        // 使用完整日期时间并美化日志样式
-        const dateTime = new Date().toLocaleString();
+        
+        // Auto-scroll to the latest entry
+        logContainer.scrollTop = 0;
+    }
+     function addConsumptionLogEntry(medicationName, count, weightReduced) {
+        // Try table output first
+        const logTable = document.getElementById('consumptionLogTable');
+        if (logTable) {
+            const tbody = logTable.querySelector('tbody');
+            if (!tbody) return;
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString();
+            const dateStr = now.toLocaleDateString();
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${dateStr}</td>
+                <td>${timeStr}</td>
+                <td>${medicationName}</td>
+                <td>${count}</td>
+                <td>${weightReduced ? weightReduced.toFixed(2) + 'g' : '-'}</td>
+            `;
+            tbody.insertBefore(row, tbody.firstChild);
+            while (tbody.children.length > 50) tbody.removeChild(tbody.lastChild);
+            return;
+        }
+        // Fallback to session log div
+        const container = document.getElementById('consumptionLogThisSession');
+        if (!container) return;
+        // Remove placeholder
+        if (container.children.length === 1 && container.firstChild.tagName === 'P') {
+            container.innerHTML = '';
+        }
         const entry = document.createElement('div');
-        entry.className = 'alert alert-info py-2';
-        // 构造日志内容
-        let html = `<strong>${dateTime}:</strong> 食用 <strong>${medName}</strong> ${count} 片`;
-        if (weightReducedApprox !== null) {
-            html += `，约减少 ${parseFloat(weightReducedApprox).toFixed(2)}g`;
-        }
-        entry.innerHTML = html;
-        if(consumptionLogDiv) consumptionLogDiv.insertBefore(entry, consumptionLogDiv.firstChild);
-        consumptionLogEntries.push(html); 
+        entry.className = 'consumption-log-entry';
+        const wrText = (typeof weightReduced === 'number') ? weightReduced.toFixed(2) + 'g' : '-';
+        entry.textContent = `${medicationName}: ${count} pills, weight reduced: ${wrText}`;
+        container.appendChild(entry);
+        // Keep only latest 50 entries
+        while (container.children.length > 50) container.removeChild(container.firstChild);
     }
+
+    // --- Status Fetching Functions ---
+    let lastStatusFetch = null;
+    let statusFetchPromise = null;
+    let consecutiveErrors = 0;
 
     function fetchStatus() {
-        // 如果存在上一个获取状态的Promise且仍在进行中，则返回它
-        if (window.fetchStatusPromise && window.fetchStatusPromiseTimestamp && 
-            (new Date().getTime() - window.fetchStatusPromiseTimestamp) < 500) {
-            console.log("使用现有状态请求，避免重复请求");
-            return window.fetchStatusPromise;
+        // If there is a previous status fetch Promise still in progress, return it
+        if (statusFetchPromise) {
+            return statusFetchPromise;
         }
-
-        // 记录请求时间戳
-        window.fetchStatusPromiseTimestamp = new Date().getTime();
         
-        // 创建新的获取状态请求
-        window.fetchStatusPromise = fetch('/get_status')
-            .then(response => response.json())
+        // Record request timestamp
+        const now = Date.now();
+        
+        // Create new status fetch request
+        statusFetchPromise = fetch('/get_status')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
-                // 清除错误计数器，因为请求成功
-                window.fetchStatusErrorCount = 0;
+                // Clear error counter as request succeeded
+                consecutiveErrors = 0;
                 
-                updateUI(data);
-                return data; // 返回数据以便链式处理
+                // Update global variables
+                pcActiveMedicationNameGlobal = data.active_medication_name;
+                pc_managed_medication_details = data.managed_medication_details || {};
+                
+                // Update UI
+                updateSummaryInfo();
+                
+                return data;
             })
             .catch(error => {
-                console.error('Error fetching status:', error);
+                // Increment error count
+                consecutiveErrors++;
                 
-                // 递增错误计数
-                window.fetchStatusErrorCount = (window.fetchStatusErrorCount || 0) + 1;
-                
-                // 如果连续错误超过5次，显示更明显的错误
-                if (window.fetchStatusErrorCount > 5) {
-                const connStatusEl = document.getElementById('connectionStatus');
-                if(connStatusEl) {
-                        connStatusEl.textContent = 'Disconnected';
-                    connStatusEl.className = 'status-disconnected';
-                }
-                    
-                    // 只在第5次和第10次错误时记录，避免日志过多
-                    if (window.fetchStatusErrorCount % 5 === 0 && window.fetchStatusErrorCount <= 10) {
-                        addLog(`获取状态失败 (${window.fetchStatusErrorCount}次): ${error}`, 'error');
-                    }
-                } else {
-                    addLog('获取状态失败: ' + error, 'error');
+                // If consecutive errors exceed 5 times, show more obvious error
+                if (consecutiveErrors >= 5) {
+                    addLog(`Failed to fetch status (${consecutiveErrors} times): ${error.message}`, 'error');
                 }
                 
-                throw error; // 将错误向上传递，保持Promise链
+                // Only log on 5th and 10th error to avoid excessive logging
+                if (consecutiveErrors === 5 || consecutiveErrors === 10) {
+                    console.error(`Status fetch error (${consecutiveErrors} times):`, error);
+                }
+                
+                // Propagate error up the Promise chain
+                throw error;
             })
             .finally(() => {
-                // 请求完成后清除引用
-                setTimeout(() => {
-                    window.fetchStatusPromise = null;
-                    window.fetchStatusPromiseTimestamp = null;
-                }, 600);
+                // Request completed, clear reference
+                statusFetchPromise = null;
+                lastStatusFetch = now;
             });
         
-        return window.fetchStatusPromise;
+        return statusFetchPromise;
     }
 
-    function sendCommand(endpoint, body = {}, method = 'POST', successMessagePrefix = '操作') {
+    function sendCommand(endpoint, body = {}, method = 'POST', successMessagePrefix = 'Operation') {
         console.log(`Sending command to ${endpoint} with body:`, body);
         addLog(`Sending request to ${endpoint}...`, "info");
         return fetch(endpoint, {
@@ -780,7 +814,7 @@
             if (!response.ok) { 
                 return response.json().then(errData => {
                     const errorMessage = errData.message || response.statusText;
-                    addLog(`请求失败 (${response.status}): ${errorMessage}`, 'error');
+                    addLog(`Request failed (${response.status}): ${errorMessage}`, 'error');
                     throw new Error(errorMessage);
                 }).catch(() => { 
                     const errorMessage = `HTTP error ${response.status}: ${response.statusText}`;
@@ -793,29 +827,29 @@
         .then(data => {
             console.log(`Response from ${endpoint}:`, data);
             if (data.status === 'success') {
-                addLog((successMessagePrefix ? successMessagePrefix + ": " : "") + (data.message || '成功'), 'success');
+                addLog((successMessagePrefix ? successMessagePrefix + ": " : "") + (data.message || 'Success'), 'success');
                 if (endpoint.includes('consume_pills')) {
                     if (data.consumed_med && data.consumed_count !== undefined) {
                          addConsumptionLogEntry(data.consumed_med, data.consumed_count, data.weight_reduced_approx);
                     }
                 }
-                // 主动刷新状态获取最新数据
+                // Actively refresh status to get latest data
                 return fetchStatus()
                     .then(() => data)
                     .catch(error => {
                         console.error("Error calling fetchStatus:", error);
-                        addLog("获取最新状态失败，但操作可能已成功", "warn");
-                return data;
+                        addLog("Failed to get latest status, but operation may have succeeded", "warn");
+                        return data;
                     });
             } else {
-                const errorMessage = (successMessagePrefix ? successMessagePrefix + "失败: " : "失败: ") + (data.message || '未知错误');
+                const errorMessage = (successMessagePrefix ? successMessagePrefix + " failed: " : "Failed: ") + (data.message || 'Unknown error');
                 addLog(errorMessage, 'error');
                 throw new Error(errorMessage);
             }
         })
         .catch(error => {
             console.error(`Error sending command to ${endpoint}:`, error);
-            addLog(`命令发送错误 (${endpoint}): ${error.message || String(error)}`, 'error');
+            addLog(`Command send error (${endpoint}): ${error.message || String(error)}`, 'error');
             return Promise.reject(error);
         });
     }
@@ -825,23 +859,23 @@
         console.log("setMode called with:", modeName); 
         addLog(`Switching to ${modeName === 'simulation' ? 'Simulation' : 'Real'} Mode...`, "info");
         
-        // 立即更新UI样式，提供即时反馈
+        // Update UI style immediately for instant feedback
         const modeIndicator = document.getElementById('modeIndicator');
         if (modeIndicator) {
             modeIndicator.textContent = modeName === 'simulation' ? 'Simulation Mode' : 'Real Mode';
             modeIndicator.className = `mode-indicator mode-${modeName}`;
         }
         
-        sendCommand(`/set_mode/${modeName}`, {}, 'POST', `切换模式到 ${modeName}`);
+        sendCommand(`/set_mode/${modeName}`, {}, 'POST', `Switching to ${modeName} Mode`);
     }
     function setStage(stageId) { 
         console.log("setStage called with:", stageId);
         
-        if(stageId === 2) { // 重置系统
-            if(!confirm("警告：这将重置整个系统，清除所有药物数据！确定继续吗？")) {
+        if(stageId === 2) { // Reset system
+            if(!confirm("Warning: This will reset the entire system and clear all medication data! Are you sure you want to continue?")) {
                 return;
             }
-            addLog("正在重置系统...", "warn");
+            addLog("Resetting system...", "warn");
         }
         
         sendCommand(`/set_stage/${stageId}`, {}, 'POST', `Switching to Stage ID ${stageId}`)
@@ -850,12 +884,12 @@
                     if(stageId === 1) { 
                         consumptionLogEntries = []; 
                         const consumptionLogDiv = document.getElementById('consumptionLogThisSession');
-                        if (consumptionLogDiv) consumptionLogDiv.innerHTML = '<p class="small-text text-center">暂无服药记录</p>';
-                    } else if(stageId === 2) { // 重置系统
-                        // 清空界面所有状态
+                        if (consumptionLogDiv) consumptionLogDiv.innerHTML = '<p class="small-text text-center">No medication records yet</p>';
+                    } else if(stageId === 2) { // Reset system
+                        // Clear all UI states
                         resetMedicationUI();
                         
-                        // 清空药物选择框
+                        // Clear medication selection dropdown
                         const medicationToTakeSelect = document.getElementById('medicationToTakeSelect');
                         if(medicationToTakeSelect) {
                             while(medicationToTakeSelect.options.length > 1) {
@@ -863,7 +897,7 @@
                             }
                         }
                         
-                        // 清空药物表格
+                        // Clear medication table
                         const pcManagedTableBody = document.getElementById('pcManagedMedicationsTable');
                         if(pcManagedTableBody) {
                             pcManagedTableBody.innerHTML = '<tr><td colspan="4" class="text-center small-text">No medications defined on PC</td></tr>';
@@ -874,9 +908,9 @@
                             knownMedsClickableTable.innerHTML = '<tr><td colspan="4" class="text-center small-text">Please add a medication first</td></tr>';
                         }
                         
-                        addLog("系统已完全重置，所有数据已清除", "success");
+                        addLog("System has been completely reset, all data cleared", "success");
                         
-                        // 强制刷新状态
+                        // Force refresh status
                         setTimeout(fetchStatus, 500);
                     }
                 }
@@ -890,9 +924,9 @@
         if (!nameEl) { console.error("Medication input element not found"); return; }
 
         const name = nameEl.value.trim();
-        if (!name) { addLog("药物名称不能为空。", "error"); return; }
+        if (!name) { addLog("Medication name cannot be empty.", "error"); return; }
         
-        sendCommand('/add_or_update_known_medication', { name: name, wpp: 0.0 }, 'POST', '添加/更新PC药物列表')
+        sendCommand('/add_or_update_known_medication', { name: name, wpp: 0.0 }, 'POST', 'Add/Update PC Medication List')
             .then(() => {
                 nameEl.value = '';
                 // 添加成功后自动刷新状态
@@ -902,7 +936,7 @@
 
     function tareArduinoForMeasurement() { 
         console.log("tareArduinoForMeasurement called");
-        sendCommand('/tare_arduino_sim_only', {}, 'POST', `为测量进行Arduino去皮`);
+        sendCommand('/tare_arduino_sim_only', {}, 'POST', `Tare Arduino for Measurement`);
     }
 
     // --- 顺序服药流程函数 ---
@@ -910,19 +944,19 @@
         const select = document.getElementById('medicationToTakeSelect');
         const medicationName = select.value;
         if (!medicationName) {
-            addLog("请先选择要服用的药物", "error");
+            addLog("Please select a medication to take first", "error");
             return;
         }
 
-        addLog(`开始 '${medicationName}' 的服药会话...`, "info");
-        sendCommand('/start_medication_session', { medication_name: medicationName }, 'POST', `开始服药会话`)
+        addLog(`Starting medication session for '${medicationName}'...`, "info");
+        sendCommand('/start_medication_session', { medication_name: medicationName }, 'POST', `Start Medication Session`)
             .then(data => {
                 if (data.status === 'success') {
                     // 更新UI到步骤2
                     moveToMedicationStep(2);
                     
                     // 更新会话状态显示
-                    updateSessionStatus(true, `正在进行 '${medicationName}' 的服药会话`);
+                    updateSessionStatus(true, `Medication session in progress for '${medicationName}'`);
                     
                     // 显示当前药物和初始重量
                     const medNameEl = document.getElementById('currentSessionMedName');
@@ -934,15 +968,15 @@
     }
 
     function unlockMedicationCompartment() {
-        addLog("正在解锁药格...", "info");
-        sendCommand('/unlock_medication_compartment', {}, 'POST', `解锁药格`)
+        addLog("Unlocking medication compartment...", "info");
+        sendCommand('/unlock_medication_compartment', {}, 'POST', `Unlock Medication Compartment`)
             .then(data => {
                 if (data.status === 'success') {
                     // 更新UI到步骤3
                     moveToMedicationStep(3);
                     
                     // 更新会话状态
-                    updateSessionStatus(true, `药格已解锁，请取出 '${data.session_data.current_medication}' 药物`);
+                    updateSessionStatus(true, `Compartment unlocked, please take out '${data.session_data.current_medication}' medication`);
                 }
             });
     }
@@ -966,45 +1000,45 @@
                     const wpp = parseFloat(details.wpp) || 0;
                     const pillCount = wpp > 0 ? Math.round(weightReduced / wpp) : 0;
                     if (pillCountEl) pillCountEl.textContent = pillCount;
-                    addLog(`测量减少重量: ${weightReduced.toFixed(2)}g, 估算服用: ${pillCount} 片`, 'info');
+                    addLog(`Measured weight reduction: ${weightReduced.toFixed(2)}g, estimated consumption: ${pillCount} pills`, 'info');
                 } else {
-                    addLog('测量减少重量失败: 无效数据', 'error');
+                    addLog('Failed to measure weight reduction: invalid data', 'error');
                 }
             })
             .catch(error => {
-                console.error('测量减少重量失败:', error);
-                addLog('测量减少重量时出错', 'error');
+                console.error('Failed to measure weight reduction:', error);
+                addLog('Error measuring weight reduction', 'error');
             });
     }
 
     function lockAndRecordConsumption() {
         // 在模拟模式下，直接使用模拟消费功能
         if (currentIsSimulationGlobal) {
-            addLog("模拟模式下，使用按重量减少功能进行服药", "info");
+            addLog("In simulation mode, using weight reduction function for medication", "info");
             consumePillsBySimulatedWeight();
             return;
         }
         // 实时模式下，获取当前重量并锁定记录
-        addLog("获取当前重量以获取最新数据...", "info");
+        addLog("Fetching current weight for latest data...", "info");
         fetch('/get_current_weight')
             .then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    addLog('重量获取成功', 'success');
+                    addLog('Weight fetched successfully', 'success');
                 } else {
-                    addLog(`重量获取失败: ${data.message || '未知错误'}`, 'error');
+                    addLog(`Failed to fetch weight: ${data.message || 'Unknown error'}`, 'error');
                 }
             })
             .catch(err => {
-                console.error('重量获取错误:', err);
-                addLog('获取重量请求出错', 'error');
+                console.error('Error fetching weight:', err);
+                addLog('Error fetching weight request', 'error');
             })
             .finally(() => {
-                addLog("正在锁定药格并记录服药量...", "info");
-                sendCommand('/lock_and_record_consumption', {}, 'POST', `完成服药并记录`)
+                addLog("Locking compartment and recording medication consumption...", "info");
+                sendCommand('/lock_and_record_consumption', {}, 'POST', `Complete Medication and Record`)
                     .then(data => {
                         if (data.status === 'success') {
-                            updateSessionStatus(false, `服药会话已完成`);
+                            updateSessionStatus(false, `Medication session completed`);
                             showMedicationResult(data.completed_session);
                         }
                     });
@@ -1012,17 +1046,17 @@
     }
 
     function cancelMedicationSession() {
-        if (!confirm("确定要取消当前服药会话吗？")) {
+        if (!confirm("Are you sure you want to cancel the current medication session?")) {
             return;
         }
         
-        addLog("正在取消服药会话...", "info");
-        sendCommand('/cancel_medication_session', {}, 'POST', `取消服药会话`)
+        addLog("Canceling medication session...", "info");
+        sendCommand('/cancel_medication_session', {}, 'POST', `Cancel Medication Session`)
             .then(data => {
                 if (data.status === 'success') {
                     // 重置UI
                     resetMedicationUI();
-                    addLog("服药会话已取消", "warn");
+                    addLog("Medication session cancelled", "warn");
                 }
             });
     }
@@ -1037,7 +1071,7 @@
         }
         
         if (statusTextEl) {
-            statusTextEl.textContent = statusText || (isActive ? '进行中' : '未开始');
+            statusTextEl.textContent = statusText || (isActive ? 'In Progress' : 'Not Started');
         }
     }
 
@@ -1109,7 +1143,7 @@
         moveToMedicationStep(1);
         
         // 重置会话状态
-        updateSessionStatus(false, '未开始');
+        updateSessionStatus(false, 'Not Started');
         
         // 清空选择框
         const select = document.getElementById('medicationToTakeSelect');
@@ -1120,25 +1154,25 @@
 
     // --- WPP测量步骤式UI函数 ---
     function moveToWppStep(stepNumber, mode) {
-        console.log(`移动到WPP步骤${stepNumber}，模式=${mode}`);
+        console.log(`Moving to WPP step ${stepNumber}, mode=${mode}`);
         
         // 在进入步骤5之前，检查WPP是否已正确设置
         if (stepNumber === 5) {
             const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
             if (!details || !details.wpp || details.wpp <= 0.0001) {
-                addLog("警告：WPP未正确设置，将使用实时重量进行临时计算", "warn");
+                addLog("Warning: WPP not properly set, will use real-time weight for temporary calculation", "warn");
                 // 在真实模式下，我们只发出警告，但不使用模拟接口
                 if (!currentIsSimulationGlobal) {
-                    addLog("真实模式下，请确保已通过Arduino正确测量并设置了WPP", "warn");
+                    addLog("In real mode, please ensure WPP has been properly measured and set through Arduino", "warn");
                 }
                 // 允许继续，但在模拟模式下使用实时重量作为临时WPP
                 else if (arduinoRawStateGlobal.total_weight_in_box_arduino !== undefined) {
                     const tempWPP = parseFloat(arduinoRawStateGlobal.total_weight_in_box_arduino);
                     if (tempWPP > 0) {
-                        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: tempWPP }, 'POST', `设置临时WPP为${tempWPP.toFixed(2)}g`)
+                        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: tempWPP }, 'POST', `Set Temporary WPP to ${tempWPP.toFixed(2)}g`)
                             .then(data => {
                                 if (data.status === 'success') {
-                                    addLog(`已设置临时WPP为${tempWPP.toFixed(2)}g`, "info");
+                                    addLog(`Temporary WPP set to ${tempWPP.toFixed(2)}g`, "info");
                                 }
                             });
                     }
@@ -1224,8 +1258,8 @@
                 step2El.style.display = 'block';
                 console.log("显示步骤2:", step2El);
             } else {
-                console.error("步骤2元素不存在!");
-                addLog("UI错误: 步骤2元素不存在", "error");
+                console.error("Step 2 element does not exist!");
+                addLog("UI error: Step 2 element does not exist", "error");
             }
         } else if (stepNumber === 3 && mode) {
             const step3El = document.getElementById(`wppStep3-${mode}`);
@@ -1254,17 +1288,17 @@
                                 fetch('/get_current_weight')
                                     .then(response => response.json())
                                     .then(data => {
-                                        console.log("获取到实时重量数据:", data);
+                                        console.log("Got real-time weight data:", data);
                                         
                                         // 检查返回的状态
                                         if (data.status === 'error') {
-                                            console.error("获取重量出错:", data.message);
+                                            console.error("Error getting weight:", data.message);
                                             window.weightUpdateErrorCount++;
                                             
                                             // 显示错误状态
                                             const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
                                             if (weightValueEl) {
-                                                weightValueEl.textContent = "读取错误";
+                                                weightValueEl.textContent = "Read Error";
                                                 weightValueEl.classList.add('text-danger');
                                             }
                                             return;
@@ -1272,10 +1306,10 @@
                                         
                                         // 检查数据是否过期
                                         if (data.age && data.age > 10) {
-                                            console.warn(`重量数据可能已过期 (${data.age.toFixed(1)}秒)`);
+                                            console.warn(`Weight data may be outdated (${data.age.toFixed(1)} seconds)`);
                                             const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
                                             if (weightValueEl) {
-                                                weightValueEl.textContent = parseFloat(data.weight).toFixed(2) + " (旧数据)";
+                                                weightValueEl.textContent = parseFloat(data.weight).toFixed(2) + " (old data)";
                                                 weightValueEl.classList.add('text-warning');
                                             }
                                             return;
@@ -1290,7 +1324,7 @@
                                             const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
                                             if (weightValueEl) {
                                                 weightValueEl.textContent = weight.toFixed(2);
-                                                console.log("更新实时重量显示:", weight.toFixed(2));
+                                                console.log("Updating real-time weight display:", weight.toFixed(2));
                                                 
                                                 // 添加重量变化视觉反馈
                                                 if (weight > 0.01) {
@@ -1304,14 +1338,14 @@
                                         }
                                     })
                                     .catch(error => {
-                                        console.error("获取重量失败:", error);
+                                        console.error("Failed to get weight:", error);
                                         window.weightUpdateErrorCount++;
                                         
                                         // 检查是否需要显示连接问题警告
                                         if (window.weightUpdateErrorCount >= 3) {
                                             const weightValueEl = document.getElementById('realTimeWeightValueInStep3');
                                             if (weightValueEl) {
-                                                weightValueEl.textContent = "连接问题";
+                                                weightValueEl.textContent = "Connection Issue";
                                                 weightValueEl.classList.add('text-danger');
                                                 weightValueEl.classList.remove('text-success', 'text-warning');
                                             }
@@ -1333,15 +1367,15 @@
                                                                     weightValueEl.textContent = weight.toFixed(2);
                                                                     weightValueEl.classList.remove('text-danger');
                                                                     weightValueEl.classList.add('text-success');
-                                                                    console.log("恢复正常连接，重量更新正常");
+                                                                    console.log("Connection restored, weight update normal");
                                                                 }
                                                             }
                                                         })
                                                         .catch(error => {
-                                                            console.error("重连后仍然获取重量失败:", error);
+                                                            console.error("Still failed to get weight after reconnection:", error);
                                                         });
                                                 }, 2000); // 增加到2秒一次
-                                                console.log("由于连续错误，减慢重量更新频率");
+                                                console.log("Due to consecutive errors, slowing down weight update frequency");
                                             }
                                         }
                                     });
@@ -1385,7 +1419,7 @@
     // 添加实时重量测量函数
     function startRealTimeWeightMeasurement() {
         if (!currentIsSimulationGlobal) {
-            addLog("开始实时测量总重...", "info");
+            addLog("Starting real-time total weight measurement...", "info");
             // 显示实时重量显示区域
             const realTimeWeightContainer = document.getElementById('realTimeWeightContainer');
             if (realTimeWeightContainer) {
@@ -1404,7 +1438,7 @@
             const weightUpdateInterval = setInterval(() => {
                 // 每次新的请求前检查是否有太多错误
                 if (window.weightUpdateErrorCount > 10) {
-                    addLog("由于连接问题，停止自动重量更新", "warn");
+                    addLog("Stopping automatic weight updates due to connection issues", "warn");
                     clearInterval(weightUpdateInterval);
                     
                     // 添加手动刷新按钮
@@ -1412,14 +1446,14 @@
                     if (realTimeWeightContainer) {
                         const refreshBtn = document.createElement('button');
                         refreshBtn.className = 'btn btn-sm btn-outline-secondary mt-2';
-                        refreshBtn.textContent = '手动刷新重量';
+                        refreshBtn.textContent = 'Manually Refresh Weight';
                         refreshBtn.onclick = function() {
                             fetchStatus()
             .then(() => {
-                                    addLog("手动刷新重量成功", "success");
+                                    addLog("Manual weight refresh successful", "success");
                                 })
                                 .catch(() => {
-                                    addLog("手动刷新重量失败", "error");
+                                    addLog("Manual weight refresh failed", "error");
                                 });
                         };
                         realTimeWeightContainer.appendChild(refreshBtn);
@@ -1457,7 +1491,7 @@
                     completeRealModeBtn = document.createElement('button');
                     completeRealModeBtn.id = 'completeRealModeBtn';
                     completeRealModeBtn.className = 'btn btn-success btn-sm mt-3';
-                    completeRealModeBtn.textContent = '确认实时重量并完成设置';
+                    completeRealModeBtn.textContent = 'Confirm Real-Time Weight and Complete Setup';
                     completeRealModeBtn.onclick = function() {
                         // 直接移动到步骤6，不调用模拟接口
                         if (window.currentWeightUpdateInterval) {
@@ -1474,7 +1508,7 @@
             })
                             .catch(() => {
                                 // 即使状态获取失败，也继续流程
-                                addLog("无法刷新状态，但将继续进行设置", "warn");
+                                addLog("Unable to refresh status, but will continue with setup", "warn");
                                 setTimeout(() => {
                                     moveToWppStep(6);
                                     updateSummaryInfo();
@@ -1498,13 +1532,13 @@
     // 添加使用实时重量更新库存的函数
     function setInventoryByRealTimeWeight(weight) {
         if (!pcActiveMedicationNameGlobal) {
-            addLog("请先选择药物", "error");
+            addLog("Please select a medication first", "error");
             return;
         }
         
         // 在真实模式下，不应该调用模拟接口
         if (!currentIsSimulationGlobal) {
-            addLog(`在真实模式下，药盒总重和数量由实际传感器读数决定，无需手动更新`, "info");
+            addLog(`In real mode, the pillbox total weight and count are determined by actual sensor readings, no manual update needed`, "info");
             
             // 直接获取最新数据并进入完成步骤
             fetchStatus().then(() => {
@@ -1518,12 +1552,12 @@
         }
         
         // 在模拟模式下继续使用模拟接口
-        addLog(`使用实时重量 ${weight.toFixed(2)}g 更新 '${pcActiveMedicationNameGlobal}' 库存...`, "info");
+        addLog(`Updating '${pcActiveMedicationNameGlobal}' inventory using real-time weight ${weight.toFixed(2)}g...`, "info");
         
-        sendCommand('/set_simulated_total_weight_for_active_med', { weight: weight }, 'POST', `通过实时重量更新 '${pcActiveMedicationNameGlobal}' 库存`)
+        sendCommand('/set_simulated_total_weight_for_active_med', { weight: weight }, 'POST', `Update '${pcActiveMedicationNameGlobal}' inventory via real-time weight`)
                 .then(data => {
                 if (data && data.status === 'success') {
-                    addLog(`库存更新成功，进入完成步骤...`, "success");
+                    addLog(`Inventory updated successfully, proceeding to completion step...`, "success");
                             fetchStatus().then(() => {
                         setTimeout(() => {
                             moveToWppStep(6);
@@ -1537,36 +1571,36 @@
     // --- Weighing Stage: Update Inventory for Active Med (Section 2) ---
     function setInventoryBySimulatedBatchWeight() { 
         console.log("setInventoryBySimulatedBatchWeight called");
-        if (!currentIsSimulationGlobal) { addLog("此功能仅模拟模式可用。", "warn"); return; }
-        if (!pcActiveMedicationNameGlobal) { addLog("请先选择药物。", "error"); return; }
+        if (!currentIsSimulationGlobal) { addLog("This feature is only available in simulation mode.", "warn"); return; }
+        if (!pcActiveMedicationNameGlobal) { addLog("Please select a medication first.", "error"); return; }
         const inputEl = document.getElementById('simBatchTotalWeightInput');
         if (!inputEl) { console.error("simBatchTotalWeightInput not found"); return; }
         const weightStr = inputEl.value;
         if (weightStr === "" || isNaN(parseFloat(weightStr)) || parseFloat(weightStr) < 0) { 
-            addLog("请输入有效的模拟总重量 (非负数)。", "error"); return; 
+            addLog("Please enter a valid simulated total weight (non-negative number).", "error"); return; 
         }
         
         const weight = parseFloat(weightStr);
-        addLog(`通过总重 ${weight}g 更新 '${pcActiveMedicationNameGlobal}' 库存...`, "info");
+        addLog(`Updating '${pcActiveMedicationNameGlobal}' inventory via total weight ${weight}g...`, "info");
         
-        sendCommand('/set_simulated_total_weight_for_active_med', { weight: weight }, 'POST', `通过总重更新 '${pcActiveMedicationNameGlobal}' 库存`)
+        sendCommand('/set_simulated_total_weight_for_active_med', { weight: weight }, 'POST', `Update '${pcActiveMedicationNameGlobal}' inventory via total weight`)
             .then(data => {
                 if(data && data.status === 'success') {
                     inputEl.value = '';
                     
-                    addLog(`刷新数据并进入完成步骤...`, "info");
+                    addLog(`Refreshing data and proceeding to completion step...`, "info");
                     
-                    // 确保获取到最新数据后再进入下一步
+                    // Ensure we have the latest data before proceeding
                     fetchStatus().then(() => {
-                        // 再次获取和输出最新的数据，用于调试
-                        console.log("最新药物数据:", pc_managed_medication_details);
+                        // Get and output latest data again for debugging
+                        console.log("Latest medication data:", pc_managed_medication_details);
                         if(pcActiveMedicationNameGlobal && pc_managed_medication_details[pcActiveMedicationNameGlobal]) {
-                            console.log("当前药物详细信息:", pc_managed_medication_details[pcActiveMedicationNameGlobal]);
+                            console.log("Current medication details:", pc_managed_medication_details[pcActiveMedicationNameGlobal]);
                         }
                         
                         setTimeout(() => {
                             moveToWppStep(6);
-                            updateSummaryInfo();  // 额外调用一次更新摘要信息
+                            updateSummaryInfo();  // Extra call to update summary info
                         }, 500);
                     });
                 }
@@ -1575,35 +1609,35 @@
 
     function setInventoryByManualPillCount() {
         console.log("setInventoryByManualPillCount called");
-        if (!pcActiveMedicationNameGlobal) { addLog("请先选择药物。", "error"); return; }
+        if (!pcActiveMedicationNameGlobal) { addLog("Please select a medication first.", "error"); return; }
         const inputEl = document.getElementById('inventoryManualPillCountInput');
         if (!inputEl) { console.error("inventoryManualPillCountInput not found"); return; }
         const countStr = inputEl.value;
         if (countStr === "" || isNaN(parseInt(countStr)) || parseInt(countStr) < 0) {
-            addLog("请输入有效的药片数量 (非负整数)。", "error"); return;
+            addLog("Please enter a valid pill count (non-negative integer).", "error"); return;
         }
         
         const count = parseInt(countStr);
-        addLog(`正在通过手动数量 ${count} 片更新"${pcActiveMedicationNameGlobal}"库存...`, "info");
+        addLog(`Updating "${pcActiveMedicationNameGlobal}" inventory with manual count of ${count} pills...`, "info");
         
-        sendCommand('/update_state_from_manual_count_for_active_med', { count: count }, 'POST', `通过数量更新 '${pcActiveMedicationNameGlobal}' 库存`)
+        sendCommand('/update_state_from_manual_count_for_active_med', { count: count }, 'POST', `Update '${pcActiveMedicationNameGlobal}' inventory via count`)
             .then(data => {
                 if(data && data.status === 'success') {
                     inputEl.value = '';
                     
-                    addLog(`刷新数据并进入完成步骤...`, "info");
+                    addLog(`Refreshing data and proceeding to completion step...`, "info");
                     
-                    // 确保获取到最新数据后再进入下一步
+                    // Ensure we have the latest data before proceeding
                     fetchStatus().then(() => {
-                        // 再次获取和输出最新的数据，用于调试
-                        console.log("最新药物数据:", pc_managed_medication_details);
+                        // Get and output latest data again for debugging
+                        console.log("Latest medication data:", pc_managed_medication_details);
                         if(pcActiveMedicationNameGlobal && pc_managed_medication_details[pcActiveMedicationNameGlobal]) {
-                            console.log("当前药物详细信息:", pc_managed_medication_details[pcActiveMedicationNameGlobal]);
+                            console.log("Current medication details:", pc_managed_medication_details[pcActiveMedicationNameGlobal]);
                         }
                         
                         setTimeout(() => {
                             moveToWppStep(6);
-                            updateSummaryInfo();  // 额外调用一次更新摘要信息
+                            updateSummaryInfo();  // Extra call to update summary info
                         }, 500);
                     });
                 }
@@ -1613,26 +1647,26 @@
     // --- Medication Stage ---
     function consumePillsForActiveMedPC() {
         console.log("consumePillsForActiveMedPC called");
-        if (!pcActiveMedicationNameGlobal) { addLog("请先选择要服用的药物。", "error"); return; }
+        if (!pcActiveMedicationNameGlobal) { addLog("Please select a medication to take first.", "error"); return; }
         const inputEl = document.getElementById('pillsToConsumeInput');
         if (!inputEl) { console.error("pillsToConsumeInput not found"); return; }
         const countStr = inputEl.value;
-        if (countStr === "" || isNaN(parseInt(countStr)) || parseInt(countStr) <= 0) { addLog("请输入有效的服用数量 (正整数)。", "error"); return; }
+        if (countStr === "" || isNaN(parseInt(countStr)) || parseInt(countStr) <= 0) { addLog("Please enter a valid consumption amount (positive integer).", "error"); return; }
         sendCommand('/consume_pills_for_active_med', { count: parseInt(countStr) }, 'POST', `服用 '${pcActiveMedicationNameGlobal}'`)
             .then(()=> { if(inputEl) inputEl.value = ''; });
     }
     function consumePillsBySimulatedWeight() {
         console.log("consumePillsBySimulatedWeight called");
-        if (!currentIsSimulationGlobal) { addLog("按重量减少仅为模拟模式功能。", "warn"); return; }
-        if (!pcActiveMedicationNameGlobal) { addLog("请先选择要服用的药物。", "error"); return; }
+        if (!currentIsSimulationGlobal) { addLog("Weight reduction function is only available in simulation mode.", "warn"); return; }
+        if (!pcActiveMedicationNameGlobal) { addLog("Please select a medication to take first.", "error"); return; }
         const inputEl = document.getElementById('weightToReduceInput');
         if (!inputEl) { console.error("weightToReduceInput not found"); return; }
         const weightStr = inputEl.value;
         if (weightStr === "" || isNaN(parseFloat(weightStr)) || parseFloat(weightStr) <= 0) {
-            addLog("请输入有效的减少重量 (正数)。", "error"); return;
+            addLog("Please enter a valid weight reduction (positive number).", "error"); return;
         }
         const weightValue = parseFloat(weightStr);
-        sendCommand('/consume_pills_by_weight_simulated', { weight_to_reduce: weightValue }, 'POST', `按重量服用 '${pcActiveMedicationNameGlobal}'`)
+        sendCommand('/consume_pills_by_weight_simulated', { weight_to_reduce: weightValue }, 'POST', `Consume '${pcActiveMedicationNameGlobal}' by weight`)
             .then(data => {
                 if (inputEl) inputEl.value = '';
                 // 更新界面显示消费结果
@@ -1640,7 +1674,7 @@
                 const pillCountEl = document.getElementById('measuredPillCount');
                 if (weightReducedEl) weightReducedEl.textContent = data.weight_reduced_approx.toFixed(2);
                 if (pillCountEl) pillCountEl.textContent = data.consumed_count;
-                addLog(`传统模拟消费完成: ${data.consumed_count} 片, 减少重量: ${data.weight_reduced_approx.toFixed(2)}g`, 'success');
+                addLog(`Traditional simulated consumption completed: ${data.consumed_count} pills, weight reduced: ${data.weight_reduced_approx.toFixed(2)}g`, 'success');
                 // 刷新状态并更新 PC 表格
                 fetchStatus();
             });
@@ -1649,18 +1683,18 @@
     // --- PC Active Medication Selection ---
     function setPcActiveMedication(medName) {
         console.log("setPcActiveMedication called with:", medName);
-        sendCommand('/set_pc_active_medication', { name: medName }, 'POST', `设置PC当前操作药物为 '${medName}'`);
+        sendCommand('/set_pc_active_medication', { name: medName }, 'POST', `Set PC active medication to '${medName}'`);
     }
 
     // --- UI Update Function ---
     function updateUI(data) {
         try { 
             arduinoRawStateGlobal = data.arduino_state || {}; 
-            // 重要：更新全局变量
+            // Important: Update global variables
             pc_managed_medication_details = data.pc_managed_medication_details || {};
             
-            console.log("UI更新，当前药物:", pcActiveMedicationNameGlobal);
-            console.log("药物详情数据:", pc_managed_medication_details);
+            console.log("UI update, current medication:", pcActiveMedicationNameGlobal);
+            console.log("Medication details data:", pc_managed_medication_details);
             
             const connStatusEl = document.getElementById('connectionStatus');
             const arduinoStage = arduinoRawStateGlobal.stage_name || 'Unknown';
@@ -1675,14 +1709,14 @@
                 modeIndicator.textContent = currentIsSimulationGlobal ? 'Simulation Mode' : 'Real Mode';
                 modeIndicator.className = `mode-indicator mode-${currentIsSimulationGlobal ? 'simulation' : 'real'}`;
             }
-            // 更新盖子状态指示
+            // Update lid state indicator
             const lidIndicator = document.getElementById('lidIndicator');
             if (lidIndicator) {
                 const open = arduinoRawStateGlobal.lid_open;
                 lidIndicator.textContent = open ? 'Open' : 'Closed';
                 lidIndicator.className = `lid-indicator lid-${open ? 'open' : 'closed'}`;
             }
-            // 新增：检测盖子开合状态变化并记录日志
+            // New: Detect lid open/close state changes and log
             if (typeof lastLidOpenState === 'boolean') {
                 if (arduinoRawStateGlobal.lid_open !== lastLidOpenState) {
                     addLog(arduinoRawStateGlobal.lid_open ? 'Pillbox lid opened' : 'Pillbox lid closed', arduinoRawStateGlobal.lid_open ? 'success' : 'warn');
@@ -1844,7 +1878,7 @@
                 for (const medName in pcManagedMeds) {
                     const option = document.createElement('option');
                     option.value = medName;
-                    option.textContent = `${medName} (${pcManagedMeds[medName].count_in_box}片)`;
+                    option.textContent = `${medName} (${pcManagedMeds[medName].count_in_box} pills)`;
                     medicationToTakeSelect.appendChild(option);
                 }
                 
@@ -1935,9 +1969,9 @@
             moveToMedicationStep(1);
         }
         
-        // 获取初始状态
-        fetchStatus(); 
-        setInterval(fetchStatus, 200); 
+        // 获取初始状态并更新UI
+        fetchStatus().then(updateUI);
+        setInterval(() => fetchStatus().then(updateUI), 200);
         
         // 显式初始化所有Bootstrap Tab组件
         document.querySelectorAll('.nav-pills .nav-link[data-bs-toggle="pill"]').forEach(function(tabEl) {
@@ -1987,7 +2021,7 @@
             summaryEl.style.display = 'block';
         }
         
-        addLog(`完成 '${pcActiveMedicationNameGlobal}' 的设置`, "success");
+        addLog(`Setup completed for '${pcActiveMedicationNameGlobal}'`, "success");
     }
 
     function startNewMedicationSetup() {
@@ -1997,7 +2031,7 @@
         // 清空当前选中的药物
         setPcActiveMedication(null);
         
-        addLog("准备添加新的药物", "info");
+        addLog("Preparing to add new medication", "info");
     }
 
     function completeAllMedicationSetup() {
@@ -2007,59 +2041,158 @@
         // 清空当前选中的药物
         setPcActiveMedication(null);
         
-        addLog("所有药物设置已完成", "success");
+        addLog("All medication setup completed", "success");
     }
 
     // 新增函数：更新摘要信息
     function updateSummaryInfo() {
-        console.log("执行updateSummaryInfo，当前药物:", pcActiveMedicationNameGlobal);
-        console.log("药物详情数据:", pc_managed_medication_details);
+        console.log("Executing updateSummaryInfo, current medication:", pcActiveMedicationNameGlobal);
+        console.log("Medication details data:", pc_managed_medication_details);
         
-        if(!pcActiveMedicationNameGlobal) {
-            console.warn("没有选中的药物，无法更新摘要信息");
+        // Update medication name
+        const medNameEl = document.getElementById('currentMedicationName');
+        if (medNameEl) {
+            medNameEl.textContent = pcActiveMedicationNameGlobal || 'No medication selected';
+        }
+        
+        // Update medication details
+        const details = pc_managed_medication_details[pcActiveMedicationNameGlobal] || {};
+        const wpp = parseFloat(details.wpp) || 0;
+        const totalWeight = parseFloat(details.total_weight) || 0;
+        const pillCount = wpp > 0 ? Math.round(totalWeight / wpp) : 0;
+        
+        // Update weight per pill
+        const wppEl = document.getElementById('weightPerPill');
+        if (wppEl) {
+            wppEl.textContent = wpp.toFixed(2);
+        }
+        
+        // Update total weight
+        const totalWeightEl = document.getElementById('totalWeight');
+        if (totalWeightEl) {
+            totalWeightEl.textContent = totalWeight.toFixed(2);
+        }
+        
+        // Update estimated pill count
+        const pillCountEl = document.getElementById('estimatedPillCount');
+        if (pillCountEl) {
+            pillCountEl.textContent = pillCount;
+        }
+        
+        // Update lid state indicator
+        const lidStateEl = document.getElementById('lidState');
+        if (lidStateEl) {
+            const isLidOpen = details.lid_open === true;
+            lidStateEl.textContent = isLidOpen ? 'Open' : 'Closed';
+            lidStateEl.className = isLidOpen ? 'text-danger' : 'text-success';
+        }
+        
+        // New: Detect lid open/close state changes and log
+        if (details.lid_open !== undefined) {
+            const prevLidState = window.prevLidState;
+            if (prevLidState !== undefined && prevLidState !== details.lid_open) {
+                addLog(`Lid state changed: ${details.lid_open ? 'Opened' : 'Closed'}`, 'info');
+            }
+            window.prevLidState = details.lid_open;
+        }
+    }
+
+    // --- Inventory Management Functions ---
+    function setInventoryBySimulatedBatchWeight() {
+        console.log("setInventoryBySimulatedBatchWeight called");
+        const weightInput = document.getElementById('simulatedBatchWeight');
+        const weight = parseFloat(weightInput.value);
+        
+        if (isNaN(weight) || weight < 0) {
+            addLog("Please enter a valid simulated total weight (non-negative number).", "error");
             return;
         }
         
-        const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
-        console.log("当前药物详情:", details);
+        // Ensure we have the latest data before proceeding
+        fetchStatus()
+            .then(() => {
+                const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
+                if (!details) {
+                    addLog("No medication selected or data not available", "error");
+                    return;
+                }
+                
+                const wpp = parseFloat(details.wpp) || 0;
+                if (wpp <= 0) {
+                    addLog("Invalid weight per pill value", "error");
+                    return;
+                }
+                
+                const pillCount = Math.round(weight / wpp);
+                addLog(`Setting inventory: ${pillCount} pills (${weight.toFixed(2)}g)`, "info");
+                
+                return sendCommand('/set_inventory', {
+                    medication_name: pcActiveMedicationNameGlobal,
+                    total_weight: weight,
+                    pill_count: pillCount
+                }, 'POST', 'Set Inventory');
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    updateSummaryInfo();
+                }
+            })
+            .catch(error => {
+                console.error("Error setting inventory:", error);
+                addLog("Failed to set inventory: " + error.message, "error");
+            });
+    }
+
+    function setInventoryByManualPillCount() {
+        console.log("setInventoryByManualPillCount called");
+        const countInput = document.getElementById('manualPillCount');
+        const count = parseInt(countInput.value);
         
-        try {
-        // 更新步骤4的确认信息
-            const wppConfirmMedName = document.getElementById('wppConfirmMedName');
-            const wppConfirmValue = document.getElementById('wppConfirmValue');
-            if (wppConfirmMedName) wppConfirmMedName.textContent = pcActiveMedicationNameGlobal || '-';
-            if (wppConfirmValue) {
-                wppConfirmValue.textContent = details && details.wpp ? parseFloat(details.wpp).toFixed(3) : '-';
+        if (isNaN(count) || count < 0) {
+            addLog("Please enter a valid pill count (non-negative integer).", "error");
+            return;
         }
         
-        // 更新步骤6的摘要信息
-            const summaryMedName = document.getElementById('summaryMedName');
-            const summaryWPP = document.getElementById('summaryWPP');
-            const summaryCount = document.getElementById('summaryCount');
-            const summaryTotalWeight = document.getElementById('summaryTotalWeight');
-            
-            if (summaryMedName) summaryMedName.textContent = pcActiveMedicationNameGlobal || '-';
-            if (summaryWPP) {
-                summaryWPP.textContent = details && details.wpp ? parseFloat(details.wpp).toFixed(3) : '-';
-            }
-            if (summaryCount) {
-                summaryCount.textContent = details && details.count_in_box !== undefined ? details.count_in_box : '-';
-            }
-            if (summaryTotalWeight) {
-                summaryTotalWeight.textContent = details && details.total_weight_in_box ? 
-                    parseFloat(details.total_weight_in_box).toFixed(2) : '-';
-            }
-        } catch (error) {
-            console.error("更新摘要信息时发生错误:", error);
-            addLog("更新摘要信息时发生错误: " + error.message, "error");
-        }
+        // Ensure we have the latest data before proceeding
+        fetchStatus()
+            .then(() => {
+                const details = pc_managed_medication_details[pcActiveMedicationNameGlobal];
+                if (!details) {
+                    addLog("No medication selected or data not available", "error");
+                    return;
+                }
+                
+                const wpp = parseFloat(details.wpp) || 0;
+                if (wpp <= 0) {
+                    addLog("Invalid weight per pill value", "error");
+                    return;
+                }
+                
+                const totalWeight = count * wpp;
+                addLog(`Setting inventory: ${count} pills (${totalWeight.toFixed(2)}g)`, "info");
+                
+                return sendCommand('/set_inventory', {
+                    medication_name: pcActiveMedicationNameGlobal,
+                    total_weight: totalWeight,
+                    pill_count: count
+                }, 'POST', 'Set Inventory');
+            })
+            .then(data => {
+                if (data && data.status === 'success') {
+                    updateSummaryInfo();
+                }
+            })
+            .catch(error => {
+                console.error("Error setting inventory:", error);
+                addLog("Failed to set inventory: " + error.message, "error");
+            });
     }
 
     // 修改现有的WPP相关函数
     function setWPPFromSimulatedSinglePillWeight() {
         console.log("setWPPFromSimulatedSinglePillWeight called");
         if (!pcActiveMedicationNameGlobal) { 
-            addLog("请先从列表选择一个药物作为当前操作药物，才能为其设置WPP。", "error"); 
+            addLog("Please select a medication from the list as the current active medication before setting its WPP.", "error"); 
             return; 
         }
         const inputEl = document.getElementById('simulatedSinglePillWeightInput');
@@ -2069,24 +2202,24 @@
         }
         const singlePillWeightStr = inputEl.value.trim();
         if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr))) {
-            addLog("请输入有效的数字。", "error"); 
+            addLog("Please enter a valid number.", "error"); 
             return;
         }
         const wpp = parseFloat(singlePillWeightStr);
         if (wpp <= 0.0001) {
-            addLog("单粒药重必须大于0.0001g。", "error"); 
+            addLog("Single pill weight must be greater than 0.0001g.", "error"); 
             return;
         }
         
-        addLog(`设置 '${pcActiveMedicationNameGlobal}' 的WPP为 ${wpp}g...`, "info");
+        addLog(`Setting WPP for '${pcActiveMedicationNameGlobal}' to ${wpp}g...`, "info");
         
-        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `设置 '${pcActiveMedicationNameGlobal}' WPP`)
+        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `Set '${pcActiveMedicationNameGlobal}' WPP`)
             .then(data => {
                 if (data.status === 'success') {
-                    // 清空输入框
+                    // Clear input field
                     inputEl.value = '';
                     
-                    // 延迟获取最新数据并移动到步骤4
+                    // Delay getting latest data and moving to step 4
                     setTimeout(() => {
                         fetchStatus()
                             .then(() => {
@@ -2094,18 +2227,18 @@
                                 updateSummaryInfo();
                             })
                             .catch(err => {
-                                console.error("获取状态失败:", err);
-                                addLog("获取最新状态失败，但WPP设置可能已成功。", "warn");
+                                console.error("Failed to get status:", err);
+                                addLog("Failed to get latest status, but WPP setting may have succeeded.", "warn");
                                 moveToWppStep(4);
                             });
                     }, 500);
         } else {
-                    addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
+                    addLog(`Failed to set WPP: ${data.message || 'Unknown error'}`, "error");
                 }
             })
             .catch(err => {
-                console.error("设置WPP时发生错误:", err);
-                addLog(`设置WPP失败: ${err.message || err}`, "error");
+                console.error("Error setting WPP:", err);
+                addLog(`Failed to set WPP: ${err.message || err}`, "error");
             });
     }
     
@@ -2113,7 +2246,7 @@
     function setWPPFromRealModeSimulatedWeight() {
         console.log("setWPPFromRealModeSimulatedWeight called");
         if (!pcActiveMedicationNameGlobal) { 
-            addLog("请先从列表选择一个药物作为当前操作药物，才能为其设置WPP。", "error"); 
+            addLog("Please select a medication from the list as the current active medication before setting its WPP.", "error"); 
             return; 
         }
         const inputEl = document.getElementById('simulatedRealModeWeightInput');
@@ -2123,18 +2256,18 @@
         }
         const singlePillWeightStr = inputEl.value.trim();
         if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr))) {
-            addLog("请输入有效的数字。", "error"); 
+            addLog("Please enter a valid number.", "error"); 
             return;
         }
         const wpp = parseFloat(singlePillWeightStr);
         if (wpp <= 0.0001) {
-            addLog("单粒药重必须大于0.0001g。", "error"); 
+            addLog("Single pill weight must be greater than 0.0001g.", "error"); 
             return;
         }
         
-        addLog(`设置 '${pcActiveMedicationNameGlobal}' 的WPP为 ${wpp}g...`, "info");
+        addLog(`Setting WPP for '${pcActiveMedicationNameGlobal}' to ${wpp}g...`, "info");
         
-        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `设置 '${pcActiveMedicationNameGlobal}' WPP`)
+        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `Set '${pcActiveMedicationNameGlobal}' WPP`)
             .then(data => {
                 if (data.status === 'success') {
                     // 清空输入框
@@ -2154,27 +2287,27 @@
                             });
                     }, 500);
                 } else {
-                    addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
+                    addLog(`Failed to set WPP: ${data.message || 'Unknown error'}`, "error");
                 }
             })
             .catch(err => {
-                console.error("设置WPP时发生错误:", err);
-                addLog(`设置WPP失败: ${err.message || err}`, "error");
+                console.error("Error setting WPP:", err);
+                addLog(`Failed to set WPP: ${err.message || err}`, "error");
             });
     }
     
      function measureSinglePillForActiveMedReal() {
         console.log("measureSinglePillForActiveMedReal called, sim mode:", currentIsSimulationGlobal);
-        if (!pcActiveMedicationNameGlobal) { addLog("请先选择药物以测量其单片重。", "error"); return; }
+        if (!pcActiveMedicationNameGlobal) { addLog("Please select a medication first to measure its single pill weight.", "error"); return; }
         
         if (currentIsSimulationGlobal) { 
-            const singlePillWeightStr = prompt(`模拟真实测量: 请为药物 "${pcActiveMedicationNameGlobal}" 输入单粒药的模拟重量 (g):`, "0.25");
+            const singlePillWeightStr = prompt(`Simulated real measurement: Please enter the simulated weight (g) for a single pill of "${pcActiveMedicationNameGlobal}":`, "0.25");
             if (singlePillWeightStr === null) { console.log("Simulated real measurement cancelled by user."); return; }
             if (singlePillWeightStr === "" || isNaN(parseFloat(singlePillWeightStr)) || parseFloat(singlePillWeightStr) <= 0.0001) {
-                 addLog("无效的模拟测量重量。", "error"); return;
+                 addLog("Invalid simulated measurement weight.", "error"); return;
             }
             const wpp = parseFloat(singlePillWeightStr);
-            sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `(模拟的真实测量) 设置 '${pcActiveMedicationNameGlobal}' WPP`)
+            sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: wpp }, 'POST', `(Simulated Real Measurement) Set '${pcActiveMedicationNameGlobal}' WPP`)
                 .then(data => {
                     if(data.status === 'success') {
                         // 移动到步骤4
@@ -2190,12 +2323,12 @@
                 confirmBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> 测量中...';
             }
             
-            addLog(`正在命令Arduino测量 '${pcActiveMedicationNameGlobal}' 的单片重，请等待...`, "info");
+            addLog(`Commanding Arduino to measure single pill weight for '${pcActiveMedicationNameGlobal}', please wait...`, "info");
             
-            sendCommand('/measure_single_pill_real_mode_for_active_med', {}, 'POST', `命令Arduino测量 '${pcActiveMedicationNameGlobal}' 单片重`)
+            sendCommand('/measure_single_pill_real_mode_for_active_med', {}, 'POST', `Command Arduino to measure '${pcActiveMedicationNameGlobal}' single pill weight`)
                 .then(data => {
                     if(data.status === 'success') {
-                        addLog(`正在测量 '${pcActiveMedicationNameGlobal}' 的单片重，请等待结果...`, "info");
+                        addLog(`Measuring single pill weight for '${pcActiveMedicationNameGlobal}', waiting for results...`, "info");
                         
                         // 获取初始WPP以便检测变化
                         let initialWpp = null;
@@ -2218,12 +2351,12 @@
                                         // 如果WPP已更新或已有有效WPP
                                         if ((initialWpp === null && currentWpp > 0.0001) || 
                                             (initialWpp !== null && Math.abs(currentWpp - initialWpp) > 0.0001)) {
-                                            addLog(`成功测量并更新 '${pcActiveMedicationNameGlobal}' 的WPP为 ${currentWpp.toFixed(3)}g`, "success");
+                                            addLog(`Successfully measured and updated WPP for '${pcActiveMedicationNameGlobal}' to ${currentWpp.toFixed(3)}g`, "success");
                                             
                                             // 重置按钮状态
                                             if (confirmBtn) {
                                                 confirmBtn.disabled = false;
-                                                confirmBtn.textContent = '确认测量单片重量';
+                                                confirmBtn.textContent = 'Confirm Single Pill Weight Measurement';
                                             }
                                             
                                             // 移动到步骤4
@@ -2237,12 +2370,12 @@
                                         setTimeout(checkWppUpdated, 1000);
                                     } else {
                                         // 尝试次数过多，提供手动继续选项
-                                        addLog(`未能自动检测到WPP更新，但操作可能已成功。您可以点击下方按钮继续。`, "warn");
+                                        addLog(`Could not automatically detect WPP update, but operation may have succeeded. You can click the button below to continue.`, "warn");
                                         
                                         // 重置按钮状态并更改为继续按钮
                                         if (confirmBtn) {
                                             confirmBtn.disabled = false;
-                                            confirmBtn.textContent = '手动继续到下一步';
+                                            confirmBtn.textContent = 'Manually Continue to Next Step';
                                             confirmBtn.onclick = function() {
                                                 moveToWppStep(4);
                                             };
@@ -2250,19 +2383,19 @@
                                     }
                                 })
                                 .catch(error => {
-                                    console.error("检查WPP更新时出错:", error);
+                                    console.error("Error checking WPP update:", error);
                                     
                                     // 如果出错但尝试次数未达上限，继续尝试
                                     if (attempts < 5) {
                                         setTimeout(checkWppUpdated, 1000);
                                     } else {
                                         // 尝试次数过多，提供手动继续选项
-                                        addLog(`由于连接问题，无法检测WPP更新，但操作可能已成功。`, "warn");
+                                        addLog(`Due to connection issues, unable to detect WPP update, but operation may have succeeded.`, "warn");
                                         
                                         // 重置按钮状态并更改为继续按钮
                                         if (confirmBtn) {
                                             confirmBtn.disabled = false;
-                                            confirmBtn.textContent = '手动继续到下一步';
+                                            confirmBtn.textContent = 'Manually Continue to Next Step';
                                             confirmBtn.onclick = function() {
                                                 moveToWppStep(4);
                                             };
@@ -2277,18 +2410,18 @@
                         // 命令发送失败，重置按钮状态
                         if (confirmBtn) {
                             confirmBtn.disabled = false;
-                            confirmBtn.textContent = '确认测量单片重量';
+                            confirmBtn.textContent = 'Confirm Single Pill Weight Measurement';
                         }
-                        addLog(`命令Arduino测量单片重失败: ${data.message || '未知错误'}`, "error");
+                        addLog(`Failed to command Arduino to measure single pill weight: ${data.message || 'Unknown error'}`, "error");
                     }
                 })
                 .catch(error => {
                     // 出错时重置按钮状态
                     if (confirmBtn) {
                         confirmBtn.disabled = false;
-                        confirmBtn.textContent = '确认测量单片重量';
+                        confirmBtn.textContent = 'Confirm Single Pill Weight Measurement';
                     }
-                    addLog(`命令Arduino测量单片重时出错: ${error.message || error}`, "error");
+                    addLog(`Error when commanding Arduino to measure single pill weight: ${error.message || error}`, "error");
                 });
         }
     }
@@ -2297,10 +2430,10 @@
         // 在真实模式下，使用当前重量作为WPP值
         if (!currentIsSimulationGlobal) {
             // 显示加载指示器
-            addLog("正在获取最新重量数据...", "info");
+            addLog("Getting latest weight data...", "info");
             const loadingIndicator = document.createElement('div');
             loadingIndicator.className = 'text-center mt-2';
-            loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">加载中...</span></div><div class="mt-1">获取重量中...</div>';
+            loadingIndicator.innerHTML = '<div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><div class="mt-1">Getting weight...</div>';
             
             const weightContainer = document.getElementById('realTimeWeightContainerInStep3');
             if (weightContainer) {
@@ -2335,12 +2468,12 @@
                     }
                     
                     if (!isNaN(currentWeight) && currentWeight > 0.0001) {
-                        addLog(`使用${weightSource}获取的重量: ${currentWeight.toFixed(3)}g`, "info");
+                        addLog(`Using weight obtained from ${weightSource}: ${currentWeight.toFixed(3)}g`, "info");
                         
-                        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: currentWeight }, 'POST', `设置WPP为当前重量`)
+                        sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: currentWeight }, 'POST', `Set WPP to current weight`)
                             .then(data => {
                                 if (data.status === 'success') {
-                                    addLog(`已设置WPP为当前重量: ${currentWeight.toFixed(3)}g`, "success");
+                                    addLog(`WPP has been set to current weight: ${currentWeight.toFixed(3)}g`, "success");
                                     
                                     // 清除步骤3的实时重量更新定时器
                                     if (window.step3WeightUpdateInterval) {
@@ -2357,28 +2490,28 @@
                                 addLog(`设置WPP时发生错误: ${error.message || error}`, "error");
                             });
                     } else {
-                        addLog("当前重量无效或太小 (小于0.0001g)，请重新测量", "error");
-                    }
-                })
-                .catch(error => {
-                    // 移除加载指示器
-                    if (loadingIndicator && loadingIndicator.parentNode) {
-                        loadingIndicator.parentNode.removeChild(loadingIndicator);
-                    }
-                    
-                    console.error("获取最新重量失败:", error);
-                    addLog("获取最新重量失败，尝试使用显示的值", "warn");
+                                            addLog("Current weight is invalid or too small (less than 0.0001g), please measure again", "error");
+                }
+            })
+            .catch(error => {
+                // 移除加载指示器
+                if (loadingIndicator && loadingIndicator.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                
+                console.error("Failed to get latest weight:", error);
+                addLog("Failed to get latest weight, trying to use displayed value", "warn");
                     
                     // 尝试使用显示的值
                     try {
                         let displayedWeight = parseFloat(document.getElementById('realTimeWeightValueInStep3').textContent);
                         if (!isNaN(displayedWeight) && displayedWeight > 0.0001) {
-                            addLog(`使用显示的重量值: ${displayedWeight.toFixed(3)}g`, "info");
+                            addLog(`Using displayed weight value: ${displayedWeight.toFixed(3)}g`, "info");
                             
-                            sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: displayedWeight }, 'POST', `设置WPP为显示重量`)
+                            sendCommand('/set_wpp_for_active_med_pc_and_arduino', { wpp: displayedWeight }, 'POST', `Set WPP to displayed weight`)
                                 .then(data => {
                                     if (data.status === 'success') {
-                                        addLog(`已设置WPP为显示重量: ${displayedWeight.toFixed(3)}g`, "success");
+                                        addLog(`WPP has been set to displayed weight: ${displayedWeight.toFixed(3)}g`, "success");
                                         moveToWppStep(4);
                                     } else {
                                         addLog(`设置WPP失败: ${data.message || '未知错误'}`, "error");
@@ -2388,20 +2521,20 @@
                                     addLog(`设置WPP时发生错误: ${error.message || error}`, "error");
                                 });
                         } else {
-                            addLog("显示的重量值无效，请重新测量", "error");
-                        }
-                    } catch (e) {
-                        addLog("无法读取显示的重量值，请重新测量", "error");
-                        console.error("解析显示重量出错:", e);
+                                                    addLog("Displayed weight value is invalid, please measure again", "error");
                     }
-                });
+                } catch (e) {
+                    addLog("Unable to read displayed weight value, please measure again", "error");
+                    console.error("Error parsing displayed weight:", e);
+                }
+            });
         } else {
             // 在模拟模式下，检查是否已输入重量
             const inputEl = document.getElementById('simulatedRealModeWeightInput');
             if (inputEl && inputEl.value && parseFloat(inputEl.value) > 0.0001) {
                 setWPPFromRealModeSimulatedWeight();
             } else {
-                addLog("请先输入有效的模拟重量", "warn");
+                addLog("Please enter a valid simulated weight first", "warn");
                 moveToWppStep(4);
             }
         }
@@ -2412,8 +2545,8 @@
         const refreshBtn = document.getElementById('refreshWeightBtn');
         const statusEl = document.getElementById('weightUpdateStatusInStep5');
         const weightEl = document.getElementById('currentWeightDisplayInStep5');
-        if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 刷新中'; }
-        if (statusEl) { statusEl.textContent = '正在强制刷新...'; statusEl.classList.remove('text-success','text-danger'); }
+                                if (refreshBtn) { refreshBtn.disabled = true; refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing'; }
+        if (statusEl) { statusEl.textContent = 'Refreshing...'; statusEl.classList.remove('text-success','text-danger'); }
         
         fetch('/force_refresh_weight', {
             method: 'POST',
@@ -2425,17 +2558,17 @@
             if (data.status === 'success') {
                 const weight = parseFloat(data.weight);
                 if (weightEl) weightEl.textContent = weight.toFixed(3);
-                if (statusEl) { statusEl.textContent = '刷新成功: ' + (data.message || ''); statusEl.classList.add('text-success'); statusEl.classList.remove('text-danger'); }
+                if (statusEl) { statusEl.textContent = 'Refresh successful: ' + (data.message || ''); statusEl.classList.add('text-success'); statusEl.classList.remove('text-danger'); }
             } else {
-                if (statusEl) { statusEl.textContent = '刷新失败: ' + (data.message || '未知错误'); statusEl.classList.add('text-danger'); statusEl.classList.remove('text-success'); }
+                if (statusEl) { statusEl.textContent = 'Refresh failed: ' + (data.message || 'Unknown error'); statusEl.classList.add('text-danger'); statusEl.classList.remove('text-success'); }
             }
         })
         .catch(error => {
-            console.error("获取重量失败:", error);
-            if (statusEl) { statusEl.textContent = '获取重量失败，请重试'; statusEl.classList.add('text-danger'); statusEl.classList.remove('text-success'); }
+            console.error("Failed to get weight:", error);
+            if (statusEl) { statusEl.textContent = 'Failed to get weight, please try again'; statusEl.classList.add('text-danger'); statusEl.classList.remove('text-success'); }
         })
         .finally(() => {
-            if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> 刷新重量'; }
+            if (refreshBtn) { refreshBtn.disabled = false; refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Weight'; }
         });
     }
 
@@ -2446,7 +2579,7 @@
 
     function confirmWeightAndSetInventory() {
         if (!pcActiveMedicationNameGlobal) {
-            addLog("请先选择药物", "error");
+            addLog("Please select a medication first", "error");
             return;
         }
         
@@ -2455,7 +2588,7 @@
         const wpp = pc_managed_medication_details[pcActiveMedicationNameGlobal].wpp;
         
         if (wpp <= 0.001) {
-            addLog("所选药物的单片重量无效，请先设置WPP", "error");
+            addLog("The selected medication's single pill weight is invalid, please set WPP first", "error");
             return;
         }
         
@@ -2474,19 +2607,19 @@
         .then(response => response.json())
         .then(data => {
             if (data.status === "success") {
-                addLog(`已确认库存: ${pillCount}片 (${currentWeight.toFixed(3)}g)`, "success");
+                addLog(`Inventory confirmed: ${pillCount} pills (${currentWeight.toFixed(3)}g)`, "success");
                 // 进入下一步
                 moveToWppStep(6);
             } else {
-                addLog(data.message || "设置库存失败", "error");
+                addLog(data.message || "Failed to set inventory", "error");
             }
         })
         .catch(error => {
-            console.error("设置库存失败:", error);
-            addLog("无法连接到服务器", "error");
+            console.error("Failed to set inventory:", error);
+            addLog("Unable to connect to server", "error");
         })
         .finally(() => {
-            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = '确认重量和药片数量'; }
+            if (confirmBtn) { confirmBtn.disabled = false; confirmBtn.textContent = 'Confirm Weight and Pill Count'; }
         });
     }
 
@@ -2523,7 +2656,7 @@
               if (bar) { bar.style.width = pct + '%'; bar.setAttribute('aria-valuenow', pct); }
             }
           }
-        }).catch(err => console.error('读取当前重量失败:', err));
+        }).catch(err => console.error('Failed to read current weight:', err));
     }
 
     // 修改自动刷新逻辑
@@ -2578,6 +2711,117 @@
             }
         }, 500);
     };
+
+    function confirmConsumption() {
+        const weightReducedEl = document.getElementById('measuredWeightReduced');
+        const pillCountEl = document.getElementById('measuredPillCount');
+        const weightReduced = parseFloat(weightReducedEl.textContent) || 0;
+        const pillCount = parseInt(pillCountEl.textContent) || 0;
+        
+        if (weightReduced <= 0 || pillCount <= 0) {
+            addLog("Please measure consumption first", "error");
+            return;
+        }
+
+        addLog(`Confirming consumption: ${pillCount} pills (${weightReduced.toFixed(2)}g)...`, "info");
+        sendCommand('/confirm_consumption', {
+            weight_reduced: weightReduced,
+            pill_count: pillCount
+        }, 'POST', `Confirm Consumption`)
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update UI to step 5
+                    moveToMedicationStep(5);
+                    
+                    // Update session status
+                    updateSessionStatus(true, `Consumption confirmed: ${pillCount} pills (${weightReduced.toFixed(2)}g)`);
+                    
+                    // Update summary information
+                    updateSummaryInfo();
+                }
+            });
+    }
+
+    function lockMedicationCompartment() {
+        addLog("Locking medication compartment...", "info");
+        sendCommand('/lock_medication_compartment', {}, 'POST', `Lock Medication Compartment`)
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update UI to step 6
+                    moveToMedicationStep(6);
+                    
+                    // Update session status
+                    updateSessionStatus(true, `Compartment locked, medication session completed`);
+                    
+                    // Update summary information
+                    updateSummaryInfo();
+                }
+            });
+    }
+
+    function cancelMedicationSession() {
+        addLog("Cancelling medication session...", "info");
+        sendCommand('/cancel_medication_session', {}, 'POST', `Cancel Medication Session`)
+            .then(data => {
+                if (data.status === 'success') {
+                    // Reset UI to step 1
+                    moveToMedicationStep(1);
+                    
+                    // Update session status
+                    updateSessionStatus(false, `Medication session cancelled`);
+                    
+                    // Update summary information
+                    updateSummaryInfo();
+                }
+            });
+    }
+
+    // --- UI Update Functions ---
+    function updateSessionStatus(isActive, message) {
+        const statusEl = document.getElementById('sessionStatus');
+        if (statusEl) {
+            statusEl.textContent = message;
+            statusEl.className = isActive ? 'text-warning' : 'text-success';
+        }
+    }
+
+    function moveToMedicationStep(step) {
+        // Hide all steps first
+        for (let i = 1; i <= 6; i++) {
+            const stepEl = document.getElementById(`medicationStep${i}`);
+            if (stepEl) {
+                stepEl.style.display = 'none';
+            }
+        }
+        
+        // Show the target step
+        const targetStep = document.getElementById(`medicationStep${step}`);
+        if (targetStep) {
+            targetStep.style.display = 'block';
+        }
+    }
+
+    // --- Event Listeners ---
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize medication session UI
+        moveToMedicationStep(1);
+        updateSessionStatus(false, 'No active medication session');
+        
+        // Add event listeners for medication session buttons
+        const startBtn = document.getElementById('startMedicationBtn');
+        const unlockBtn = document.getElementById('unlockCompartmentBtn');
+        const measureBtn = document.getElementById('measureConsumptionBtn');
+        const confirmBtn = document.getElementById('confirmConsumptionBtn');
+        const lockBtn = document.getElementById('lockCompartmentBtn');
+        const cancelBtn = document.getElementById('cancelSessionBtn');
+        
+        if (startBtn) startBtn.addEventListener('click', startMedicationSession);
+        if (unlockBtn) unlockBtn.addEventListener('click', unlockMedicationCompartment);
+        if (measureBtn) measureBtn.addEventListener('click', measureConsumption);
+        if (confirmBtn) confirmBtn.addEventListener('click', confirmConsumption);
+        if (lockBtn) lockBtn.addEventListener('click', lockMedicationCompartment);
+        if (cancelBtn) cancelBtn.addEventListener('click', cancelMedicationSession);
+    });
 </script>
 </body>
 </html>

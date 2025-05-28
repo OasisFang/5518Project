@@ -41,7 +41,14 @@
                     if (r.frequency_type === 'interval') {
                         let cur = new Date(r.start_datetime*1000);
                         while (cur <= ed) {
-                            events.push({ title: `Reminder: ${r.medication_name}`, start: cur.toISOString(), color: 'red' });
+                            // Reminder spans one hour
+                            events.push({
+                                title: `Reminder: ${r.medication_name}`,
+                                start: cur.toISOString(),
+                                end: new Date(cur.getTime() + 60*60*1000).toISOString(),
+                                color: 'red',
+                                allDay: false
+                            });
                             cur.setHours(cur.getHours()+r.frequency_value);
                         }
                     } else {
@@ -52,7 +59,14 @@
                             for (let i=0;i<times;i++){
                                 const dt = new Date(d);
                                 dt.setHours(Math.floor(i*interval),0,0);
-                                events.push({ title: `Reminder: ${r.medication_name}`, start: dt.toISOString(), color: 'red' });
+                                // Reminder spans one hour
+                                events.push({
+                                    title: `Reminder: ${r.medication_name}`,
+                                    start: dt.toISOString(),
+                                    end: new Date(dt.getTime() + 60*60*1000).toISOString(),
+                                    color: 'red',
+                                    allDay: false
+                                });
                             }
                         }
                     }

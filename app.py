@@ -9,30 +9,30 @@ import requests
 from pyngrok import ngrok, conf
 import sqlite3
 
-# 持久化 ngrok 认证令牌到配置文件，无需每次输入
+# Persist ngrok auth token to config file; no need to input every time
 NGROK_AUTH_TOKEN = '2mFiHwvEfuSUrKTx1L8PkXEcKRK_ctEupzpfswsUSCBaj4Ac'
 ngrok.set_auth_token(NGROK_AUTH_TOKEN)
 
-# 云端同步服务器 URL，通过环境变量 `CLOUD_SERVER_URL` 设置
+# Cloud sync server URL, set via environment variable `CLOUD_SERVER_URL`
 CLOUD_SERVER_URL = os.environ.get('CLOUD_SERVER_URL', 'https://your-cloud-server.com/api/consumption')
 
-# 配置
-SERIAL_PORT = 'COM3' # 根据实际情况修改
+# Configuration
+SERIAL_PORT = 'COM3'  # Modify as needed
 BAUD_RATE = 9600
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.INFO) # 设置日志级别
+logging.basicConfig(level=logging.INFO)  # Set logging level
 logger = logging.getLogger(__name__)
 
-# --- 全局状态 ---
-arduino_raw_state = { # 直接来自 Arduino 的数据
+# --- Global State ---
+arduino_raw_state = {  # Data directly from Arduino
     "stage_name": "Initializing",
     "total_weight_in_box_arduino": 0.0, 
     "pill_count_arduino_current_med": 0, 
     "current_med_on_arduino": "N/A",    
     "wpp_arduino_current_med": 0.25,    
-    "lid_distance_cm": None,    # 盖子距离
-    "lid_open": False,         # 盖子状态
+    "lid_distance_cm": None,    # Lid distance
+    "lid_open": False,         # Lid status
     "last_update": time.time(),
     "raw_data": ""
 }
@@ -43,7 +43,7 @@ ser = None
 pc_managed_medication_details = {}
 pc_active_medication_name = None
 
-# 添加顺序服药会话状态变量
+# Add sequential medication session state variables
 medication_session_active = False
 medication_session_data = {
     "start_weight": 0.0,
@@ -51,9 +51,9 @@ medication_session_data = {
     "compartment_unlocked": False,
     "session_start_time": None
 }
-# --- End 全局状态 ---
+# --- End Global State ---
 
-# 本地历史 SQLite 数据库
+# Local history SQLite database
 DB_PATH = os.environ.get('HISTORY_DB', 'history.db')
 conn = sqlite3.connect(DB_PATH, check_same_thread=False)
 cursor = conn.cursor()
@@ -67,24 +67,24 @@ CREATE TABLE IF NOT EXISTS history (
     timestamp INTEGER
 )''')
 
-# 添加留言表
+# Add messages table
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     content TEXT NOT NULL,
-    sender TEXT DEFAULT '医生',
+    sender TEXT DEFAULT 'Doctor',
     timestamp INTEGER
 )''')
 
-# --- 创建服药提醒表 ---
+# --- Create medication reminders table ---
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS reminders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     medication_name TEXT NOT NULL,
     start_datetime INTEGER NOT NULL,
     end_datetime INTEGER NOT NULL,
-    frequency_type TEXT NOT NULL,   -- 'interval' 或 'daily'
-    frequency_value REAL NOT NULL   -- 小时间隔 或 每日次数
+    frequency_type TEXT NOT NULL,   -- 'interval' or 'daily'
+    frequency_value REAL NOT NULL   -- Small time interval or daily count
 )''')
 conn.commit()
 
@@ -116,29 +116,29 @@ def read_from_arduino_thread_function():
     last_reconnect_attempt = 0
     
     while True:
-        # 检查连接状态，如果没有连接或者最后更新时间超过10秒，尝试重连
+        # Check connection status, if not connected or last update exceeds 10 seconds, attempt to reconnect
         current_time = time.time()
         connection_lost = not (ser and ser.is_open) or (current_time - arduino_raw_state.get("last_update", 0) > 10)
         
-        if connection_lost and current_time - last_reconnect_attempt > 5:  # 至少5秒间隔重连尝试
+        if connection_lost and current_time - last_reconnect_attempt > 5:  # At least 5 seconds between reconnection attempts
             last_reconnect_attempt = current_time
             connection_retries += 1
-            logger.warning(f"Arduino连接丢失或超时，尝试重连 (第{connection_retries}次)")
+            logger.warning(f"Arduino connection lost or timeout, attempting to reconnect (Attempt {connection_retries})")
             
-            # 关闭可能存在的旧连接
+            # Close any existing old connection
             if ser and ser.is_open:
                 try:
                     ser.close()
                 except:
                     pass
                     
-            # 尝试重新连接
+            # Attempt to reconnect
             if connect_to_arduino(): 
                 connection_retries = 0
-                logger.info("Arduino重连成功")
+                logger.info("Arduino reconnection successful")
             else:
-                logger.error("Arduino重连失败")
-                # 短暂休眠避免过于频繁的重连尝试
+                logger.error("Arduino reconnection failed")
+                # Brief sleep to avoid too frequent reconnection attempts
                 time.sleep(1)
                 continue
                 
@@ -149,18 +149,19 @@ def read_from_arduino_thread_function():
                     arduino_raw_state["last_update"] = time.time()
                     arduino_raw_state["raw_data"] = line
                 if line.startswith("DATA:"): 
+                    logger.info(f"Received DATA line: {line}")
                     parts = line[5:].split(',')
                     if len(parts) >= 5: 
                         with data_lock:
                             arduino_raw_state["stage_name"] = parts[0]
                             try: arduino_raw_state["total_weight_in_box_arduino"] = float(parts[1])
-                            except ValueError: logger.warning(f"无法解析重量数据: {parts[1]}")
+                            except ValueError: logger.warning(f"Unable to parse weight data: {parts[1]}")
                             try: arduino_raw_state["pill_count_arduino_current_med"] = int(parts[2])
-                            except ValueError: logger.warning(f"无法解析药片数量: {parts[2]}")
+                            except ValueError: logger.warning(f"Unable to parse pill count: {parts[2]}")
                             arduino_raw_state["current_med_on_arduino"] = parts[3]
                             try: arduino_raw_state["wpp_arduino_current_med"] = float(parts[4])
-                            except ValueError: logger.warning(f"无法解析WPP: {parts[4]}")
-                            # 解析超声波传感器数据：距离和状态
+                            except ValueError: logger.warning(f"Unable to parse WPP: {parts[4]}")
+                            # Parse ultrasonic sensor data: distance and status
                             if len(parts) >= 7:
                                 try: arduino_raw_state["lid_distance_cm"] = float(parts[5])
                                 except ValueError: arduino_raw_state["lid_distance_cm"] = None
@@ -171,39 +172,39 @@ def read_from_arduino_thread_function():
                                pc_active_medication_name in pc_managed_medication_details and \
                                abs(pc_managed_medication_details[pc_active_medication_name]['wpp'] - arduino_raw_state["wpp_arduino_current_med"]) > 0.0001: 
                                 if "Measured single pill weight" in arduino_raw_state["raw_data"] or "MEASURE_SINGLE_PILL_WEIGHT" in arduino_raw_state["raw_data"]: 
-                                    logger.info(f"Arduino报告了'{pc_active_medication_name}'的新WPP值: {arduino_raw_state['wpp_arduino_current_med']:.3f}g. 更新PC记录。")
+                                    logger.info(f"Arduino reported new WPP value for '{pc_active_medication_name}': {arduino_raw_state['wpp_arduino_current_med']:.3f}g. Updating PC record.")
                                     pc_managed_medication_details[pc_active_medication_name]['wpp'] = arduino_raw_state["wpp_arduino_current_med"]
                                     recalculate_pill_count_for_med(pc_active_medication_name) 
                 elif line.startswith("WEIGHT:"): 
-                    # 处理来自GET_WEIGHT命令的响应
+                    # Handle response from GET_WEIGHT command
                     try:
                         weight_value = float(line.split(':')[1].strip())
                         with data_lock:
                             arduino_raw_state["total_weight_in_box_arduino"] = weight_value
                             arduino_raw_state["last_update"] = time.time()
-                        logger.debug(f"接收到重量数据: {weight_value}g")
+                        logger.debug(f"Received weight data: {weight_value}g")
                     except (ValueError, IndexError) as e:
-                        logger.warning(f"解析重量数据失败: {line}, 错误: {e}")
+                        logger.warning(f"Failed to parse weight data: {line}, error: {e}")
                 elif "Arduino Pillbox Ready" in line: 
-                    logger.info("Arduino确认就绪")
-                elif "测量样本" in line or "开始测量" in line:
-                    # 记录测量过程信息
-                    logger.info(f"测量信息: {line}")
+                    logger.info("Arduino confirmed ready")
+                elif "Measuring sample" in line or "Starting measurement" in line:
+                    # Record measurement process information
+                    logger.info(f"Measurement info: {line}")
                 elif line: 
-                    logger.info(f"Arduino消息: {line}") 
+                    logger.info(f"Arduino message: {line}") 
             else: 
-                time.sleep(0.05)  # 短暂休眠，避免过度占用CPU
+                time.sleep(0.05)  # Brief sleep to avoid excessive CPU usage
         except serial.SerialException as e: 
-            logger.error(f"串口通信错误: {e}. 关闭端口并将在下一循环尝试重连。")
+            logger.error(f"Serial communication error: {e}. Closing port and will attempt to reconnect in next cycle.")
             try:
                 if ser: 
                     ser.close()
             except:
                 pass
             ser = None 
-            time.sleep(1)  # 错误后短暂休眠
+            time.sleep(1)  # Brief sleep after error
         except Exception as e: 
-            logger.error(f"Arduino监听线程错误: {e}")
+            logger.error(f"Arduino listener thread error: {e}")
             time.sleep(0.5)
 
 def send_to_arduino_command(command_str):
@@ -286,21 +287,21 @@ def set_stage_api(stage_id):
         if stage_id == 2: # RESET_STAGE
             global pc_active_medication_name, medication_session_active, medication_session_data
             with data_lock:
-                # 清除当前活动药物
+                # Clear current active medication
                 pc_active_medication_name = None
                 
-                # 清除所有药物信息（如果需要完全重置）
+                # Clear all medication information (if complete reset is needed)
                 pc_managed_medication_details.clear()
                 
-                # 清除本地历史记录
+                # Clear local history
                 try:
                     cursor.execute('DELETE FROM history')
                     conn.commit()
-                    logger.info('已清除本地服药历史记录')
+                    logger.info('Local medication history cleared')
                 except Exception as e:
-                    logger.error(f'清除本地历史记录失败: {e}')
+                    logger.error(f'Failed to clear local history: {e}')
                 
-                # 重置顺序服药会话状态
+                # Reset sequential medication session state
                 medication_session_active = False
                 medication_session_data = {
                     "start_weight": 0.0,
@@ -309,10 +310,10 @@ def set_stage_api(stage_id):
                     "session_start_time": None
                 }
                 
-                # 重置Arduino状态
+                # Reset Arduino state
                 send_to_arduino_command("RESET_ALL")
                 
-            logger.info("系统已完全重置：清除了所有药物信息和会话状态")
+            logger.info("System completely reset: cleared all medication information and session states")
         return jsonify({"status": "success", "message": f"Stage switch command sent (Stage ID: {stage_id}).", "stage_id": stage_id})
     return jsonify({"status": "error", "message": "Stage switch command failed to send."}), 500
 
@@ -440,19 +441,19 @@ def set_wpp_for_active_med_pc_and_arduino_api():
 
 @app.route('/measure_single_pill_real_mode_for_active_med', methods=['POST'])
 def measure_single_pill_real_api():
-    """触发 Arduino 执行单片药重测量，并让前端后续轮询状态更新 WPP 值"""
+    """Trigger Arduino to perform single pill weight measurement, and let frontend poll status to update WPP value"""
     global pc_active_medication_name
-    # 确保已选药物
+    # Ensure medication is selected
     if not pc_active_medication_name:
-        return jsonify({"status": "error", "message": "请先选择要测量的药物。"}), 400
-    # 校验模式
+        return jsonify({"status": "error", "message": "Please select a medication to measure first."}), 400
+    # Check mode
     if current_mode_is_simulation:
-        return jsonify({"status": "error", "message": "当前处于模拟模式，请切换到真实模式后再测量。"}), 400
-    # 发送测量命令到 Arduino
+        return jsonify({"status": "error", "message": "Currently in simulation mode, please switch to real mode before measuring."}), 400
+    # Send measurement command to Arduino
     if not send_to_arduino_command("MEASURE_SINGLE_PILL_WEIGHT"):
-        return jsonify({"status": "error", "message": "无法发送测量命令到 Arduino"}), 500
-    # 命令已发送，前端将通过轮询状态检测并更新 WPP
-    return jsonify({"status": "success", "message": "测量命令已发送，请等待结果。"}), 200
+        return jsonify({"status": "error", "message": "Unable to send measurement command to Arduino"}), 500
+    # Command sent, frontend will poll status to detect and update WPP
+    return jsonify({"status": "success", "message": "Measurement command sent, please wait for results."}), 200
 
 @app.route('/consume_pills_for_active_med', methods=['POST'])
 def consume_pills_pc_api():
@@ -546,7 +547,7 @@ def consume_pills_by_weight_simulated_api():
         logger.error(f"Error in consume_pills_by_weight_simulated_api: {e}")
         return jsonify({"status": "error", "message": "Invalid input for weight to reduce."}), 400
 
-# --- 顺序服药流程相关API ---
+# --- Sequential Medication Session API ---
 @app.route('/start_medication_session', methods=['POST'])
 def start_medication_session_api():
     global medication_session_active, medication_session_data
@@ -555,26 +556,26 @@ def start_medication_session_api():
     medication_name = data.get('medication_name')
     
     if not medication_name:
-        return jsonify({"status": "error", "message": "必须指定要服用的药物名称"}), 400
+        return jsonify({"status": "error", "message": "Must specify the medication name to be taken"}), 400
     
     if medication_name not in pc_managed_medication_details:
-        return jsonify({"status": "error", "message": f"未找到药物: {medication_name}"}), 404
+        return jsonify({"status": "error", "message": f"Medication not found: {medication_name}"}), 404
     
     with data_lock:
         if medication_session_active:
-            return jsonify({"status": "error", "message": "已有一个服药会话正在进行中，请先结束当前会话"}), 400
+            return jsonify({"status": "error", "message": "There is already an active medication session in progress, please finish the current session first"}), 400
         
-        # 设置PC当前活动药物
+        # Set PC current active medication
         global pc_active_medication_name
         pc_active_medication_name = medication_name
         
-        # 同步到Arduino
+        # Sync to Arduino
         sync_pc_active_med_to_arduino(medication_name)
         
-        # 新增：发送 BOX_TARE 命令，让 Arduino 记录箱子基准重量
+        # New: Send BOX_TARE command, let Arduino record box baseline weight
         send_to_arduino_command('BOX_TARE')
         
-        # 记录初始重量, 已去皮后设为 0
+        # Record initial weight, set to 0 after peeling
         medication_session_data = {
             "start_weight": 0.0,
             "current_medication": medication_name,
@@ -584,11 +585,11 @@ def start_medication_session_api():
         
         medication_session_active = True
         
-        logger.info(f"开始 '{medication_name}' 的服药会话，初始重量: {medication_session_data['start_weight']:.2f}g")
+        logger.info(f"Started '{medication_name}' medication session, initial weight: {medication_session_data['start_weight']:.2f}g")
         
         return jsonify({
             "status": "success", 
-            "message": f"已开始 '{medication_name}' 的服药会话",
+            "message": f"Started '{medication_name}' medication session",
             "session_data": medication_session_data
         })
 
@@ -597,20 +598,20 @@ def unlock_medication_compartment_api():
     global medication_session_data
     
     if not medication_session_active:
-        return jsonify({"status": "error", "message": "没有活动的服药会话，请先开始一个会话"}), 400
+        return jsonify({"status": "error", "message": "No active medication session in progress, please start a session first"}), 400
     
     with data_lock:
-        # 在真实模式下，发送解锁命令到Arduino
+        # In real mode, send unlock command to Arduino
         if not current_mode_is_simulation:
             if not send_to_arduino_command("UNLOCK_COMPARTMENT:1"):
-                return jsonify({"status": "error", "message": "无法发送解锁命令到Arduino"}), 500
+                return jsonify({"status": "error", "message": "Unable to send unlock command to Arduino"}), 500
         
         medication_session_data["compartment_unlocked"] = True
-        logger.info(f"已解锁药格，准备取出 '{medication_session_data['current_medication']}'")
+        logger.info(f"Medication compartment unlocked, ready to take '{medication_session_data['current_medication']}'")
         
         return jsonify({
             "status": "success", 
-            "message": f"已解锁 '{medication_session_data['current_medication']}' 的药格",
+            "message": f"Medication compartment unlocked for '{medication_session_data['current_medication']}'",
             "session_data": medication_session_data
         })
 
@@ -619,43 +620,43 @@ def lock_and_record_consumption_api():
     global medication_session_active, medication_session_data, pc_managed_medication_details
     
     if not medication_session_active:
-        return jsonify({"status": "error", "message": "没有活动的服药会话，请先开始一个会话"}), 400
+        return jsonify({"status": "error", "message": "No active medication session in progress, please start a session first"}), 400
     
     if not medication_session_data["compartment_unlocked"]:
-        return jsonify({"status": "error", "message": "药格尚未解锁，请先解锁药格"}), 400
+        return jsonify({"status": "error", "message": "Medication compartment not unlocked, please unlock compartment first"}), 400
     
     with data_lock:
-        # 在真实模式下，发送锁定命令到Arduino
+        # In real mode, send lock command to Arduino
         if not current_mode_is_simulation:
             if not send_to_arduino_command("LOCK_COMPARTMENT:1"):
-                return jsonify({"status": "error", "message": "无法发送锁定命令到Arduino"}), 500
+                return jsonify({"status": "error", "message": "Unable to send lock command to Arduino"}), 500
         
-        # 计算消耗的重量和药片数量（直接使用当前调整后重量的绝对值）
+        # Calculate consumed weight and pill count (directly use the absolute value of the current adjusted weight)
         med_name = medication_session_data["current_medication"]
         current_weight = arduino_raw_state["total_weight_in_box_arduino"]
         weight_consumed = abs(current_weight)
         
-        # 根据WPP计算消耗的药片数量
+        # Calculate consumed pill count based on WPP
         med_details = pc_managed_medication_details[med_name]
         wpp = med_details["wpp"]
         pills_consumed = int(round(weight_consumed / wpp)) if wpp > 0.0001 else 0
         
-        # 更新药物库存
+        # Update medication inventory
         if pills_consumed > 0:
             med_details["count_in_box"] = max(0, med_details["count_in_box"] - pills_consumed)
             med_details["total_weight_in_box"] = max(0, med_details["total_weight_in_box"] - (pills_consumed * wpp))
             
-            # 同步到Arduino
+            # Sync to Arduino
             if current_mode_is_simulation:
                 send_to_arduino_command(f"SET_WEIGHT:{med_details['total_weight_in_box']:.2f}")
         
-        # 重置会话
+        # Reset session
         medication_session_active = False
         session_duration = time.time() - medication_session_data["session_start_time"]
         
-        logger.info(f"已完成 '{med_name}' 的服药会话，消耗: {pills_consumed} 片，重量减少: {weight_consumed:.2f}g，持续时间: {session_duration:.1f}秒")
+        logger.info(f"Completed medication session for '{med_name}': consumed {pills_consumed} pills, weight reduced: {weight_consumed:.2f}g, duration: {session_duration:.1f}s")
         
-        # 保存会话数据用于返回
+        # Save session data for return
         completed_session = medication_session_data.copy()
         completed_session.update({
             "end_weight": current_weight,
@@ -664,7 +665,7 @@ def lock_and_record_consumption_api():
             "session_duration": session_duration
         })
         
-        # 新增：异步同步到云端服务器，避免阻塞主线程
+        # New: Asynchronously sync to cloud server, avoid blocking main thread
         cloud_payload = {
             "medication_name": med_name,
             "pills_consumed": pills_consumed,
@@ -674,28 +675,28 @@ def lock_and_record_consumption_api():
         }
         def _sync_to_cloud(payload):
             try:
-                # 跳过默认占位地址
+                # Skip default placeholder address
                 if CLOUD_SERVER_URL and "your-cloud-server.com" not in CLOUD_SERVER_URL:
                     requests.post(CLOUD_SERVER_URL, json=payload, timeout=2)
-                    logger.info("已将服药记录异步同步到云端服务器")
+                    logger.info("Medication consumption record asynchronously synced to cloud server")
                 else:
-                    logger.info("跳过默认云端同步地址，请配置有效 CLOUD_SERVER_URL")
+                    logger.info("Skipped default cloud sync address, please configure valid CLOUD_SERVER_URL")
             except Exception as e:
-                logger.error(f"异步同步到云端服务器失败: {e}")
+                logger.error(f"Asynchronous sync to cloud server failed: {e}")
         threading.Thread(target=_sync_to_cloud, args=(cloud_payload,), daemon=True).start()
 
-        # 保存本地历史记录
+        # Save local history record
         try:
             cursor.execute(
                 'INSERT INTO history (medication_name, pills_consumed, weight_consumed, session_duration, timestamp) VALUES (?, ?, ?, ?, ?)',
                 (med_name, pills_consumed, weight_consumed, session_duration, int(time.time()))
             )
             conn.commit()
-            logger.info('已将服药记录保存到本地历史数据库')
+            logger.info('Medication consumption record saved to local history database')
         except Exception as e:
-            logger.error(f"保存本地历史失败: {e}")
+            logger.error(f"Failed to save local history: {e}")
         
-        # 重置会话数据
+        # Reset session data
         medication_session_data = {
             "start_weight": 0.0,
             "current_medication": None,
@@ -705,7 +706,7 @@ def lock_and_record_consumption_api():
         
         return jsonify({
             "status": "success", 
-            "message": f"已完成服药记录: {med_name} {pills_consumed} 片",
+            "message": f"Completed consumption record: {med_name} {pills_consumed} pills",
             "completed_session": completed_session,
             "consumed_med": med_name,
             "consumed_count": pills_consumed,
@@ -717,17 +718,17 @@ def cancel_medication_session_api():
     global medication_session_active, medication_session_data
     
     if not medication_session_active:
-        return jsonify({"status": "error", "message": "没有活动的服药会话可取消"}), 400
+        return jsonify({"status": "error", "message": "No active medication session to cancel"}), 400
     
     with data_lock:
-        # 如果药格已解锁，发送锁定命令到Arduino
+        # If compartment is unlocked, send lock command to Arduino
         if medication_session_data["compartment_unlocked"] and not current_mode_is_simulation:
             send_to_arduino_command("LOCK_COMPARTMENT:1")
         
-        # 保存会话数据用于返回
+        # Save session data for return
         cancelled_session = medication_session_data.copy()
         
-        # 重置会话
+        # Reset session
         medication_session_active = False
         medication_session_data = {
             "start_weight": 0.0,
@@ -736,11 +737,11 @@ def cancel_medication_session_api():
             "session_start_time": None
         }
         
-        logger.info(f"已取消服药会话: '{cancelled_session['current_medication']}'")
+        logger.info(f"Cancelled medication session: '{cancelled_session['current_medication']}'")
         
         return jsonify({
             "status": "success", 
-            "message": f"已取消服药会话: {cancelled_session['current_medication']}",
+            "message": f"Cancelled medication session: {cancelled_session['current_medication']}",
             "cancelled_session": cancelled_session
         })
 
@@ -768,116 +769,124 @@ def get_current_weight():
 
 @app.route('/force_refresh_weight', methods=['POST'])
 def force_refresh_weight():
-    """强制获取最新重量数据，用于药物库存设置步骤"""
+    """Force get latest weight data, for drug inventory setup step"""
     try:
-        # 解析 JSON safely
+        # Parse JSON safely
         data = request.get_json(silent=True) or {}
-        # 如果是真实模式且串口未连接，尝试重连
+        # If real mode and port not connected, try reconnect
         if not current_mode_is_simulation and (ser is None or not ser.is_open):
-            logger.warning("force_refresh_weight: 串口未连接，尝试重新连接 Arduino")
+            logger.warning("force_refresh_weight: Serial port not connected, attempting to reconnect Arduino")
             if not connect_to_arduino():
-                return jsonify({'status': 'error', 'message': 'Arduino 重新连接失败'}), 500
+                return jsonify({'status': 'error', 'message': 'Arduino reconnection failed'}), 500
         if not current_mode_is_simulation and ser and ser.is_open:
-            # 清空缓冲区
+            # Clear buffer
             ser.reset_input_buffer()
             
-            # 先执行去皮操作
+            # First execute peeling operation
             if data.get('tare_first', False):
-                logger.info("强制刷新前执行去皮操作")
+                logger.info("Force refresh before executing peeling operation")
                 ser.write(b"TARE_SIM\n")
-                time.sleep(0.5)  # 等待去皮完成
+                time.sleep(0.5)  # Wait for peeling to complete
             
-            # 多次尝试获取有效重量
+            # Multiple attempts to get valid weight
             max_attempts = 3
             for attempt in range(max_attempts):
-                # 发送GET_WEIGHT命令
+                # Send GET_WEIGHT command
                 ser.write(b"GET_WEIGHT\n")
                 
-                # 等待响应
-                response_timeout = 2.0  # 较长的超时时间
+                # Wait for response
+                response_timeout = 2.0  # Longer timeout time
                 start_time = time.time()
                 
                 while time.time() - start_time < response_timeout:
                     if ser.in_waiting > 0:
                         line = ser.readline().decode('utf-8', errors='replace').strip()
-                        logger.debug(f"强制刷新收到响应: {line}")
+                        logger.debug(f"Force refresh received response: {line}")
                         
                         if line.startswith("WEIGHT:"):
                             try:
                                 weight_value = float(line.split(':')[1].strip())
                                 
-                                # 确认重量是有效值
+                                # Confirm weight is valid value
                                 if weight_value >= 0:
                                     with data_lock:
                                         arduino_raw_state["total_weight_in_box_arduino"] = weight_value
                                         arduino_raw_state["last_update"] = time.time()
                                     
-                                    # 如果有活动药物，更新库存计算
+                                    # If active medication, update inventory calculation
                                     if pc_active_medication_name and pc_active_medication_name in pc_managed_medication_details:
                                         med_details = pc_managed_medication_details[pc_active_medication_name]
                                         if med_details['wpp'] > 0.001:
                                             med_details['total_weight_in_box'] = weight_value
                                             recalculate_pill_count_for_med(pc_active_medication_name)
-                                            logger.info(f"已更新'{pc_active_medication_name}'的库存：{med_details['count_in_box']}片 (总重{weight_value:.3f}g)")
+                                            logger.info(f"Updated '{pc_active_medication_name}' inventory: {med_details['count_in_box']} pills (TotalW {weight_value:.3f}g)")
                                     
                                     return jsonify({
                                         'status': 'success',
                                         'weight': weight_value,
-                                        'message': f"成功获取实时重量: {weight_value:.3f}g",
+                                        'message': f"Successfully got real-time weight: {weight_value:.3f}g",
                                         'attempt': attempt + 1
                                     })
                             except (ValueError, IndexError) as e:
-                                logger.warning(f"解析重量响应失败: {line}, 错误: {e}")
+                                logger.warning(f"Failed to parse weight response: {line}, error: {e}")
                     
                     time.sleep(0.05)
                 
-                logger.warning(f"强制刷新重量尝试 {attempt+1}/{max_attempts} 超时")
-                time.sleep(0.2)  # 短暂延迟后重试
+                logger.warning(f"Force refresh weight attempt {attempt+1}/{max_attempts} timed out")
+                time.sleep(0.2)  # Brief delay before retrying
             
-            # 所有尝试都失败
+            # All attempts failed
             return jsonify({
                 'status': 'error',
-                'message': f"无法获取有效重量数据，请检查传感器连接",
+                'message': f"Failed to get valid weight data, please check sensor connection",
                 'weight': 0.0
             }), 500
         else:
-            # 模拟模式下，直接返回当前模拟重量
+            # Simulation mode, directly return current simulated weight
             with data_lock:
                 weight = arduino_raw_state.get('total_weight_in_box_arduino', 0.0)
             
             return jsonify({
                 'status': 'success',
                 'weight': weight,
-                'message': f"模拟模式下重量: {weight:.3f}g"
+                'message': f"Simulation mode weight: {weight:.3f}g"
             })
     
     except Exception as e:
-        error_msg = f"强制刷新重量时发生错误: {str(e)}"
+        error_msg = f"Error occurred during force refresh weight: {str(e)}"
         logger.error(error_msg)
         return jsonify({'status': 'error', 'message': error_msg, 'weight': 0.0}), 500
 
 @app.route('/inventory_setup.html')
 def inventory_setup_page():
-    """返回库存设置页面"""
+    """Return inventory setup page"""
     return render_template('inventory_setup.html')
 
 @app.route('/medication_setup.html')
 def medication_setup_page():
-    """返回药物设置页面(如果不存在则创建一个假页面)"""
-    return render_template('inventory_setup.html')  # 临时使用相同页面
+    """Return medication setup page (if not exist, create a fake page)"""
+    return render_template('inventory_setup.html')  # Temporary use same page
 
 @app.route('/api/history', methods=['GET'])
 def api_history():
-    cursor.execute('SELECT medication_name, pills_consumed, weight_consumed, session_duration, timestamp FROM history ORDER BY timestamp DESC')
-    rows = cursor.fetchall()
-    history_list = [{
-        'medication_name': r[0],
-        'pills_consumed': r[1],
-        'weight_consumed': r[2],
-        'session_duration': r[3],
-        'timestamp': r[4]
-    } for r in rows]
-    return jsonify(history_list)
+    try:
+        # Use a fresh cursor/connection to avoid recursive use
+        rows = conn.execute(
+            'SELECT medication_name, pills_consumed, weight_consumed, session_duration, timestamp '
+            'FROM history ORDER BY timestamp DESC'
+        ).fetchall()
+        history_list = [{
+            'medication_name': r[0],
+            'pills_consumed': r[1],
+            'weight_consumed': r[2],
+            'session_duration': r[3],
+            'timestamp': r[4]
+        } for r in rows]
+        return jsonify(history_list)
+    except Exception as e:
+        logger.error(f"Error querying history: {e}")
+        # Return empty list on error
+        return jsonify([])
 
 @app.route('/history')
 def history_page():
@@ -887,7 +896,7 @@ def history_page():
 def remote_monitor_page():
     return render_template('remote_monitor.html')
 
-# 添加留言相关API
+# Add messages related API
 @app.route('/api/messages', methods=['GET'])
 def get_messages():
     cursor.execute('SELECT id, content, sender, timestamp FROM messages ORDER BY timestamp DESC LIMIT 50')
@@ -904,13 +913,13 @@ def get_messages():
 def add_message():
     data = request.json
     if not data or 'content' not in data:
-        return jsonify({'status': 'error', 'message': '留言内容不能为空'}), 400
+        return jsonify({'status': 'error', 'message': 'Message content cannot be empty'}), 400
     
     content = data.get('content').strip()
-    sender = data.get('sender', '医生').strip()
+    sender = data.get('sender', 'Doctor').strip()
     
     if not content:
-        return jsonify({'status': 'error', 'message': '留言内容不能为空'}), 400
+        return jsonify({'status': 'error', 'message': 'Message content cannot be empty'}), 400
     
     timestamp = int(time.time())
     
@@ -923,17 +932,17 @@ def add_message():
         
         return jsonify({
             'status': 'success',
-            'message': '留言已添加',
+            'message': 'Message added',
             'id': cursor.lastrowid,
             'content': content,
             'sender': sender,
             'timestamp': timestamp
         })
     except Exception as e:
-        logger.error(f"添加留言失败: {e}")
-        return jsonify({'status': 'error', 'message': f'添加留言失败: {str(e)}'}), 500
+        logger.error(f"Failed to add message: {e}")
+        return jsonify({'status': 'error', 'message': f'Failed to add message: {str(e)}'}), 500
 
-# --- 提醒相关API ---
+# --- Reminder related API ---
 @app.route('/api/reminders', methods=['GET'])
 def get_reminders():
     cursor.execute('SELECT id, medication_name, start_datetime, end_datetime, frequency_type, frequency_value FROM reminders')
@@ -959,39 +968,39 @@ def add_reminder():
     ftype = data.get('frequency_type')
     fval = data.get('frequency_value')
     if not name or sd is None or ed is None or ftype not in ('interval','daily') or not fval:
-        return jsonify({'status':'error','message':'参数错误'}), 400
+        return jsonify({'status':'error','message':'Invalid parameters'}), 400
     cursor.execute('INSERT INTO reminders (medication_name,start_datetime,end_datetime,frequency_type,frequency_value) VALUES (?,?,?,?,?)',
                    (name, int(sd), int(ed), ftype, float(fval)))
     conn.commit()
     return jsonify({'status':'success','id': cursor.lastrowid})
 
-# 添加 /calendar 页面
+# Add /calendar page
 @app.route('/calendar')
 def calendar_page():
     return render_template('calendar.html')
 
-# --- app.py 末尾 ---
+# --- app.py end ---
 if __name__ == '__main__':
     logger.info("Starting Flask Pillbox Controller.")
 
-    # 1. 创建 ngrok 隧道
+    # 1. Create ngrok tunnel
     try:
         from pyngrok import ngrok, conf
 
-        # 如果你在澳洲，可选设置区域，减少延迟
-        conf.get_default().region = "ap"   # 也可留空让 ngrok 自动选
+        # If in Australia, optionally set region, reduce latency
+        conf.get_default().region = "ap"   # Can also leave empty for ngrok to auto-select
 
         public_url = ngrok.connect(addr=5000, proto="http").public_url
-        logger.info(f"ngrok 隧道已创建: {public_url}")
-        logger.info(f"远程监控页面地址: {public_url}/remote")
+        logger.info(f"ngrok tunnel created: {public_url}")
+        logger.info(f"Remote monitoring page address: {public_url}/remote")
     except Exception as e:
-        logger.error(f"启动 ngrok 隧道失败: {e}")
+        logger.error(f"Failed to create ngrok tunnel: {e}")
 
-    # 2. 启动 Arduino 监听线程
+    # 2. Start Arduino listener thread
     if not connect_to_arduino(): 
-        logger.warning("启动时连接 Arduino 失败，监听线程会持续重试。")
+        logger.warning("Failed to connect to Arduino at startup, listener thread will retry continuously.")
     threading.Thread(target=read_from_arduino_thread_function,
                      daemon=True).start()
 
-    # 3. 启动 Flask
+    # 3. Start Flask
     app.run(host='0.0.0.0', port=5000, debug=True, use_reloader=False)

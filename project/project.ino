@@ -1,5 +1,7 @@
 #include <DFRobot_HX711_I2C.h>
-#include <Ultrasonic.h>  // 引入超声波库
+#include <Ultrasonic.h>  // Include ultrasonic library
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 
 // SimulatedPillbox.ino (与V5/V6版本一致)
 // 模拟参数和状态
@@ -40,35 +42,55 @@ Ultrasonic ultrasonic(7);
 
 float boxTareOffset = 0.0; // 箱子重量基准偏移
 
+// Initialize I2C LCD (address 0x27, 16 columns, 2 rows)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Reminder timing variables
+unsigned long remindStartTime = 0;    // millis when reminder starts
+unsigned long missedStartTime = 0;    // millis when missed reminder starts
+bool showMissed = false;              // flag indicating missed display
+// Next medication time display
+char nextMedicationTime[6] = "";      // HH:MM format or current time
+bool hasNextTime = false;             // flag indicating next medication time is set
+
 void setup() {
   Serial.begin(9600);
   
-  // 初始化重量传感器
+  // Initialize I2C LCD
+  lcd.init();
+  lcd.backlight();
+  
+  // Display default message
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("PharmaPlan");
+  
+  // Initialize weight sensor
   int sensorInitAttempts = 0;
   while (!MyScale.begin()) {
-    Serial.println(F("重量传感器初始化失败，请检查连接"));
+    Serial.println(F("Weight sensor initialization failed, please check connection"));
     delay(1000);
     sensorInitAttempts++;
     if (sensorInitAttempts > 5) {
-      Serial.println(F("无法初始化传感器，将使用模拟模式"));
+      Serial.println(F("Unable to initialize sensor, switching to simulation mode"));
       isSimulationMode = true;
       break;
     }
   }
   
-  // 设置校准值
+  // Set calibration value
   MyScale.setCalibration(2236.f);
   
-  // 去皮，执行多次以确保稳定
+  // Tare, execute multiple times to ensure stability
   for (int i = 0; i < 3; i++) {
-  MyScale.peel();
+    MyScale.peel();
     delay(100);
   }
   
-  // 测试读取重量，确保传感器正常工作
+  // Test weight reading to ensure sensor is working
   if (!isSimulationMode) {
     float testWeight = MyScale.readWeight();
-    Serial.print(F("传感器测试读数: "));
+    Serial.print(F("Sensor test reading: "));
     Serial.print(testWeight, 3);
     Serial.println(F(" g"));
   }
@@ -76,11 +98,11 @@ void setup() {
   Serial.println(F("Arduino Pillbox Ready."));
   Serial.println(isSimulationMode ? F("Mode: Simulation") : F("Mode: Real"));
   Serial.println(F("Waiting for commands from PC..."));
-  sendDataToPC(); // 初始发送一次数据
+  sendDataToPC(); // Initial data send to PC
 }
 
 void loop() {
-  checkSerial(); // 处理串口接收
+  checkSerial(); // Process serial input
 
   if (stringComplete) {
     processCommand(inputBuffer);
@@ -89,43 +111,75 @@ void loop() {
     stringComplete = false;
   }
 
-  // 在真实模式下读取实际重量
+  // Read actual weight in real mode
   if (!isSimulationMode) {
-    // 防止传感器读取异常导致断开连接
+    // Prevent sensor reading anomalies from causing disconnection
     float newWeight = MyScale.readWeight();
-    // 应用简单的平滑滤波，避免数值跳变
-    if (newWeight >= 0 && newWeight < 1000) { // 只接受合理范围内的值
-      // 平滑滤波，减少跳变
+    // Apply simple smoothing filter to avoid value jumps
+    if (newWeight >= 0 && newWeight < 1000) { // Only accept values within reasonable range
+      // Smoothing filter to reduce jumps
       simulatedWeight = simulatedWeight * 0.7 + newWeight * 0.3;
     }
     
-    // 在测量模式下实时显示重量
+    // Display weight in real-time during measurement mode
     if (isMeasuringMode && (millis() - lastWeightDisplayTime >= weightDisplayInterval)) {
       lastWeightDisplayTime = millis();
-      Serial.print(F("当前重量: "));
+      Serial.print(F("Current weight: "));
       Serial.print(simulatedWeight, 3);
       Serial.println(F(" g"));
     }
   }
 
-  // 根据当前药盒总重量(simulatedWeight)和当前药物的单片药重(weight_per_pill)计算数量
+  // Calculate pill count based on current pillbox total weight (simulatedWeight) and current pill weight (weight_per_pill)
   if (weight_per_pill > 0.001) {
-    if (simulatedWeight < (weight_per_pill / 2.0)) { // 如果总重不足半片，则认为没有药
+    if (simulatedWeight < (weight_per_pill / 2.0)) { // If total weight is less than half a pill, consider it empty
       pill_count = 0;
     } else {
-      // 四舍五入计算药丸数量
+      // Round to calculate pill count
       pill_count = round(simulatedWeight / weight_per_pill);
     }
   } else {
-    pill_count = 0; // 如果单片药重未设置或为零，则药丸数量为零
+    pill_count = 0; // If single pill weight is not set or zero, pill count is zero
   }
 
-  // 定期发送当前状态到 PC
+  // Periodically send current status to PC
   if (millis() - lastSerialSendTime >= serialSendInterval) {
     lastSerialSendTime = millis();
     sendDataToPC();
   }
-  delay(10); // 短暂延时，保持循环稳定
+  delay(10); // Short delay to keep loop stable
+
+  // Update LCD display based on reminder timers
+  unsigned long now = millis();
+  // Transition to missed state if reminder expired
+  if (remindStartTime > 0 && now - remindStartTime > 1800000UL) {
+    if (!showMissed) {
+      showMissed = true;
+      missedStartTime = now;
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Missed");
+      lcd.setCursor(0,1);
+      lcd.print("medication");
+    }
+  }
+  // Return to default after missed period
+  if (showMissed && now - missedStartTime > 1800000UL) {
+    showMissed = false;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("PharmaPlan");
+  }
+  // Default display under PharmaPlan: next medication time or current time
+  if (remindStartTime == 0 && !showMissed) {
+    lcd.setCursor(0,1);
+    if (hasNextTime) {
+      lcd.print("Next: ");
+      lcd.print(nextMedicationTime);
+    } else {
+      lcd.print(nextMedicationTime);
+    }
+  }
 }
 
 void sendDataToPC() {
@@ -137,21 +191,21 @@ void sendDataToPC() {
   }
   float adjustedWeight = rawWeight - boxTareOffset;
   Serial.print(F("DATA:"));
-  Serial.print(stageNames[currentStage]); // 当前阶段名称
+  Serial.print(stageNames[currentStage]); // Current stage name
   Serial.print(F(","));
-  Serial.print(adjustedWeight, 2);       // 使用基于BOX_TARE的校正重量
+  Serial.print(adjustedWeight, 2);       // Weight corrected based on BOX_TARE
   Serial.print(F(","));
-  Serial.print(pill_count);               // 基于 simulatedWeight 和 weight_per_pill 计算出的药丸数量
+  Serial.print(pill_count);               // Pill count based on simulatedWeight and weight_per_pill
   Serial.print(F(","));
-  Serial.print(selectedMedication);       // Arduino 当前选中的药物
+  Serial.print(selectedMedication);       // Current selected medication on Arduino
   Serial.print(F(","));
-  Serial.print(weight_per_pill, 3);       // Arduino 当前选中药物的单片重量
-  // 超声波传感器距离测量
+  Serial.print(weight_per_pill, 3);       // Single pill weight of current selected medication on Arduino
+  // Ultrasonic sensor distance measurement
   long lidDistance = ultrasonic.MeasureInCentimeters();
   Serial.print(F(","));
-  Serial.print(lidDistance);              // 药盒盖子与传感器距离
+  Serial.print(lidDistance);              // Distance between pillbox lid and sensor
   Serial.print(F(","));
-  Serial.println(lidDistance > 5 ? 1 : 0); // 距离>5cm表示开启(1)，否则关闭(0)
+  Serial.println(lidDistance > 5 ? 1 : 0); // Distance > 5cm indicates open (1), otherwise closed (0)
 }
 
 // 检查串口输入
@@ -277,26 +331,26 @@ void processCommand(const char* command) {
   }
   // --- 真实模式下，获取当前重量作为单片药重 (针对当前选中的药物) ---
   else if (!isSimulationMode && commandStartsWith(command, "MEASURE_SINGLE_PILL_WEIGHT")) {
-      // 进行多次读取并取平均值，提高稳定性
+      // Perform multiple readings and take average for stability
       float sum = 0.0;
       int validReadings = 0;
       
-      // 先发送测量开始的消息
-      Serial.println(F("开始测量单片药重，请稍候..."));
+      // First send measurement start message
+      Serial.println(F("Starting single pill weight measurement, please wait..."));
       
-      // 进行多次测量并取平均值
+      // Perform multiple measurements and take average
       for (int i = 0; i < 5; i++) {
         float reading = MyScale.readWeight();
-        if (reading >= 0.0001 && reading < 10.0) { // 合理范围内的药片重量
+        if (reading >= 0.0001 && reading < 10.0) { // Reasonable pill weight range
           sum += reading;
           validReadings++;
-          Serial.print(F("测量样本 "));
+          Serial.print(F("Measurement sample "));
           Serial.print(i+1);
           Serial.print(F(": "));
           Serial.print(reading, 3);
           Serial.println(F("g"));
         }
-        delay(100); // 测量间隔，减轻传感器负担
+        delay(100); // Measurement interval to reduce sensor load
       }
       
       float currentWeight = 0.0;
@@ -329,17 +383,17 @@ void processCommand(const char* command) {
       float currentWeight = MyScale.readWeight();
       if (currentWeight > 0.0001 && strcmp(selectedMedication, "N/A") != 0) {
           weight_per_pill = currentWeight;
-          Serial.print(F("已确认单片药重为: ")); Serial.print(weight_per_pill, 3); Serial.println(F(" g"));
-          Serial.print(F("药物: ")); Serial.println(selectedMedication);
-          isMeasuringMode = false; // 退出测量模式
+          Serial.print(F("Confirmed single pill weight: ")); Serial.print(weight_per_pill, 3); Serial.println(F(" g"));
+          Serial.print(F("Medication: ")); Serial.println(selectedMedication);
+          isMeasuringMode = false; // Exit measurement mode
       } else {
-          Serial.println(F("当前重量无效或未选择药物，请重试"));
+          Serial.println(F("Current weight invalid or no medication selected, please try again"));
       }
   }
   // 添加取消测量命令
   else if (!isSimulationMode && commandStartsWith(command, "CANCEL_MEASURE")) {
       isMeasuringMode = false;
-      Serial.println(F("已取消测量"));
+      Serial.println(F("Measurement cancelled"));
   }
   // 添加对GET_WEIGHT命令的处理，直接返回当前重量
   else if (commandStartsWith(command, "GET_WEIGHT")) {
@@ -376,7 +430,45 @@ void processCommand(const char* command) {
   else if (commandStartsWith(command, "BOX_TARE")) {
       // 记录当前重量作为基准偏移
       boxTareOffset = MyScale.readWeight();
-      Serial.println(F("BOX_TARE 完成"));
+      Serial.println(F("BOX_TARE complete"));
+  }
+  else if (commandStartsWith(command, "LCD:REMIND")) {
+    // Start reminder: half-hour before medication
+    remindStartTime = millis();
+    showMissed = false;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Time to take");
+    lcd.setCursor(0,1);
+    lcd.print("medication");
+  }
+  else if (commandStartsWith(command, "LCD:TAKEN")) {
+    // Medication taken: reset display
+    remindStartTime = 0;
+    showMissed = false;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("PharmaPlan");
+  }
+  else if (commandStartsWith(command, "LCD:NEXT:")) {
+    // Receive next medication time in HH:MM
+    extractText(command, 9, nextMedicationTime, sizeof(nextMedicationTime));
+    hasNextTime = true;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("PharmaPlan");
+    lcd.setCursor(0,1);
+    lcd.print("Next: "); lcd.print(nextMedicationTime);
+  }
+  else if (commandStartsWith(command, "LCD:TIME:")) {
+    // Receive current time when no medication scheduled
+    extractText(command, 9, nextMedicationTime, sizeof(nextMedicationTime));
+    hasNextTime = false;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("PharmaPlan");
+    lcd.setCursor(0,1);
+    lcd.print(nextMedicationTime);
   }
 
   sendDataToPC(); // 发送更新后的状态到PC
