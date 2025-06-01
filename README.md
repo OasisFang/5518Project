@@ -53,7 +53,7 @@ A comprehensive medication management solution combining hardware and software t
 ## Installation 📥
 1. Set up Python Environment:
    - Install Python 3.6 or higher.
-   - Create and activate a virtual environment:
+   - Create and activate a virtual environment: (Optional)
      ```bash
      python -m venv venv
      # Windows PowerShell
@@ -126,7 +126,7 @@ http://<your_remote_domain>/history
 Contributions are welcome! Please submit a pull request or open an issue.
 
 ## License 📄
-[Insert your license here]
+Oasis and Evelyn Design
 
 ## Support 📞
 For support, please [insert contact information or support channels]. 
